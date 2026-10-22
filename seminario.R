@@ -26,6 +26,7 @@ head(clima_diario)
 #AEMET considera que la referencia de datos son los registrados entre los años
 #1971 y 2000
 
+#no volver a ejecutar
 datos_referencia <- climaemet::aemet_daily_clim(
   station = "all",
   start = "1971-01-01",
@@ -33,7 +34,7 @@ datos_referencia <- climaemet::aemet_daily_clim(
 ) %>% 
   filter(month(fecha) %in% c(7,8))
 head(datos_referencia)
-
+#no volver a ejecutar
 lista <- list()
 for (y in 2001:2025) {
   lista[[as.character(y)]] <- climaemet::aemet_daily_clim(
@@ -42,8 +43,15 @@ for (y in 2001:2025) {
     end     = paste0(y, "-09-30")
   )
 }
-
 datos_trabajar <- dplyr::bind_rows(lista)
+
+
+
+
+#EJECUTAR A PARTOR DE AQUI
+library(lubridate)
+library(dplyr)
+library(climaemet)
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -80,3 +88,4 @@ olas <- diario %>%
 
 
 olas %>% count(año = year(inicio))
+
