@@ -48,10 +48,11 @@ datos_trabajar <- dplyr::bind_rows(lista)
 
 
 
-#EJECUTAR A PARTOR DE AQUI
+#EJECUTAR A PARTIR DE AQUI
 library(lubridate)
 library(dplyr)
 library(climaemet)
+library(ggplot2)
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -89,3 +90,53 @@ olas <- diario %>%
 
 olas %>% count(año = year(inicio))
 
+
+#Representación de los datos de holas de calor en ggplot2
+
+#Representación para visualizar cuando ocurrieron las rachas de calor, la intendidad y cuanto duró cada uan
+ggplot(olas, aes(x = inicio, xend = fin, y = reorder(factor(racha), inicio), color = max_pct)) +
+  geom_segment(linewidth = 2, lineend = "round") +
+  scale_color_viridis_c(option = "inferno") + #escala de calor
+  labs(
+    title = "Cronología e Intensidad de Olas de Calor",
+    subtitle = "Cada barra representa una racha desde su inicio hasta su fin",
+    x = "Fecha",
+    y = "Racha",
+    color = "Max Pct (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+#Representacion para ver si las olas de calor más duraderas son también las más intensas
+ggplot(olas, aes(x = dias, y = max_pct, color = year(inicio))) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "Relación entre Duración e Intensidad",
+    subtitle = "Comparativa de eventos de olas de calor",
+    x = "Duración (Días)",
+    y = "Intensidad Máxima (Max Pct %)",
+    color = "Año"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold")
+  )
+#Representacion para ver si la intensidad de las olas de calor aumenta según los años
+ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=max_pct))+
+  geom_point(size=4, alpha=0.8) +
+  geom_smooth(method = "lm", se=FALSE, linetype="dashed", color="gray50") +
+  labs(
+    title = "Relación entre Año e Intensidad",
+    x="Año",
+    y="Intensidad Máxima(Max Pct%",
+    color="Año"
+  )+
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face="bold")
+  )
+  
