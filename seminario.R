@@ -53,6 +53,8 @@ library(lubridate)
 library(dplyr)
 library(climaemet)
 library(ggplot2)
+library(tidyjson)
+library(jsonlite)
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -90,8 +92,25 @@ olas <- diario %>%
 
 olas %>% count(año = year(inicio))
 
+# importación datos de mortalidad
+peninsula <- read_json("INPUT/DATA/peninsula.json")
 
-#Representación de los datos de holas de calor en ggplot2
+x <- fromJSON("INPUT/DATA/peninsula.json")
+
+datos <- peninsula %>% 
+  gather_array("serie") %>%
+  spread_all() %>%
+  select(document.id, Nombre) %>%
+  enter_object(Data) %>%
+  gather_array() %>%
+  spread_all() %>%
+  select(Nombre, Anyo, Valor, T3_TipoDato) %>%
+  as_tibble()
+
+View(datos)
+
+
+#Representación de los datos de olas de calor en ggplot2
 
 #Representación para visualizar cuando ocurrieron las rachas de calor, la intendidad y cuanto duró cada uan
 ggplot(olas, aes(x = inicio, xend = fin, y = reorder(factor(racha), inicio), color = max_pct)) +
