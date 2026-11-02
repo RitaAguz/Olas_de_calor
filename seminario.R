@@ -93,7 +93,7 @@ olas <- diario %>%
 olas %>% count(año = year(inicio))
 
 # importación datos de mortalidad
-peninsula <- read_json("INPUT/DATA/peninsula.json")
+peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
 
 x <- fromJSON("INPUT/DATA/peninsula.json")
 
@@ -101,9 +101,11 @@ datos <- peninsula %>%
   gather_array("serie") %>%
   spread_all() %>%
   select(document.id, Nombre) %>%
+  filter(grepl("Menos de 1 año", Nombre, ignore.case = TRUE)) %>% # se filtran las edades para que sólo sean bebés menores de 1 año
   enter_object(Data) %>%
   gather_array() %>%
   spread_all() %>%
+  filter(Anyo >= 2000, Anyo <= 2025) %>% # se filtran los años de 2000 a 2025 (no hay 2026) 
   select(Nombre, Anyo, Valor, T3_TipoDato) %>%
   as_tibble()
 
