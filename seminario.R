@@ -53,8 +53,9 @@ library(lubridate)
 library(dplyr)
 library(climaemet)
 library(ggplot2)
-library(tidyjson)
+#library(tidyjson)
 library(jsonlite)
+library(tidyverse)
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -101,7 +102,7 @@ datos <- peninsula %>%
   gather_array("serie") %>%
   spread_all() %>%
   select(document.id, Nombre) %>%
-  filter(grepl("Menos de 1 año", Nombre, ignore.case = TRUE)) %>% # se filtran las edades para que sólo sean bebés menores de 1 año
+  filter(str_detect(Nombre, "Menos de 1 año|Menores de 1 año")) %>% # se filtran las edades para que sólo sean bebés menores de 1 año
   enter_object(Data) %>%
   gather_array() %>%
   spread_all() %>%
@@ -161,3 +162,46 @@ ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=max_pct))+
     plot.title = element_text(face="bold")
   )
   
+# Representación cuántas muertes y cuánto varian entre años según la comunidad y la causa
+
+# se separa el nombre de la serie en columnas
+datos <- datos %>%
+  separate_wider_delim(Nombre, delim = ". ",
+                       names = c("causa", "sexo", "edad", "comunidad", "tipo"),
+                       too_many = "drop")
+
+# se define la gráfica de cajas
+grafica_caja <- function(df, titulo){
+  ggplot(df, aes(x = Valor, y = fct_reorder(grupo, Valor), fill = grupo)) +
+    geom_boxplot(alpha = 0.4, outlier.shape = NA, show.legend = FALSE) +
+    geom_jitter(aes(colour = grupo), height = 0.15, size = 2,
+                show.legend = FALSE) +
+    labs(x = "Muertes en menores de 1 año", y = NULL, title = titulo) +
+    theme_minimal()
+}
+  
+# se toman todas las causas y ambos sexos, por comunidad
+por_comunidad <- datos %>%
+  filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
+         comunidad != "Total Nacional") %>%
+  rename(grupo = comunidad)
+  
+# se toma el total nacional y ambos sexos, por causa
+por_causa <- datos %>%
+  filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
+         comunidad != "Total Nacional") %>%
+  rename(grupo = causa)
+  
+# se dibujan las dos gráficas
+grafica_caja(por_comunidad, "Por comunidad (2000-2025)")
+grafica_caja(por_causa, "Por enfermedad (2000-2025)")
+
+
+
+
+
+
+
+
+
+
