@@ -53,9 +53,9 @@ library(lubridate)
 library(dplyr)
 library(climaemet)
 library(ggplot2)
-#library(tidyjson)
 library(jsonlite)
 library(tidyverse)
+library(tidyjson)
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -171,37 +171,33 @@ datos <- datos %>%
                        too_many = "drop")
 
 # se define la gráfica de cajas
-grafica_caja <- function(df, titulo){
-  ggplot(df, aes(x = Valor, y = fct_reorder(grupo, Valor), fill = grupo)) +
+grafica_caja <- function(df, titulo, etiqueta_x){
+  ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, fill = grupo)) +
     geom_boxplot(alpha = 0.4, outlier.shape = NA, show.legend = FALSE) +
     geom_jitter(aes(colour = grupo), height = 0.15, size = 2,
                 show.legend = FALSE) +
-    labs(x = "Muertes en menores de 1 año", y = NULL, title = titulo) +
-    theme_minimal()
+    labs(x = etiqueta_x, y = "Número de muertes en menores de 1 año", title = titulo) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1))
 }
   
 # se toman todas las causas y ambos sexos, por comunidad
 por_comunidad <- datos %>%
-  filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
-         comunidad != "Total Nacional") %>%
+  filter(str_detect(causa, "Todas las causas"), sexo == "Total",
+         comunidad != "Total Nacional", comunidad != "Extranjero") %>%
   rename(grupo = comunidad)
   
 # se toma el total nacional y ambos sexos, por causa
 por_causa <- datos %>%
   filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
-         comunidad != "Total Nacional") %>%
+         comunidad != "Total Nacional", comunidad != "Extranjero") %>%
+  group_by(causa, Anyo) %>%
+  summarise(Valor = sum(Valor), .groups = "drop") %>%
   rename(grupo = causa)
   
 # se dibujan las dos gráficas
-grafica_caja(por_comunidad, "Por comunidad (2000-2025)")
-grafica_caja(por_causa, "Por enfermedad (2000-2025)")
-
-
-
-
-
-
-
+grafica_caja(por_comunidad, "Por comunidad (2000-2025)", "Comunidad autónoma")
+grafica_caja(por_causa, "Por causa (2000-2025)", "Causa de muerte")
 
 
 
