@@ -5,13 +5,20 @@ author: "Santiago Herrero Ruipérez, Paula Manrique Álvarez, Margarita Aguzarov
 date: "2026-10-19"
 output: html_document
 ---
-## Enlace al repositorio (SANTIAGO POR FAVOR)
-[GitHub Olas_de_Calor] // aquí el enlace
 
-## Introducción (SANTIAGO)
+## 1. Introducción 
 
-## Objetivo general
+## 2. Objetivo general
 El objetivo general de este seminario es estudiar si existe alguna relación entre las olas de calor y la mortalidad infantil en las comunidades autónomas de España durante el periodo 2000-2025, teniendo en cuenta el producto interior bruto (PIB) como posible factor que pueda afectar esa relación.
 
-## Objetivos específicos 
+## 3. Objetivos específicos 
 
+## 4. Metodología
+
+## 5. Resultados / Discusión
+
+## 6. Conclusión
+
+## 7. Enlace al repositorio 
+
+## 8. Bibliografía
