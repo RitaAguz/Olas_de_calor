@@ -193,7 +193,8 @@ por_causa <- datos %>%
          comunidad != "Total Nacional", comunidad != "Extranjero") %>%
   group_by(causa, Anyo) %>%
   summarise(Valor = sum(Valor), .groups = "drop") %>%
-  rename(grupo = causa)
+  rename(grupo = causa) %>%
+  mutate(grupo = str_wrap(grupo, width = 25)) # para los nombres demasiado largos
   
 # se dibujan las dos gráficas
 grafica_caja(por_comunidad, "Por comunidad (2000-2025)", "Comunidad autónoma")
