@@ -211,12 +211,15 @@ pib_tabla <- pib_raw %>%
 
 # Se toma los datos del PIB por CCAA
 pib_ccaa <- pib_tabla %>%
-  filter(!str_detect(Nombre, "Total Nacional|España|Extranjero")) %>%
+  filter(!str_detect(Nombre, "(?i)Total Nacional|España|Extranjero")) %>%
   filter(T3_TipoDato %in% c("Definitivo", "Provisional", "Avance")) %>%
   mutate(
     grupo = str_remove(Nombre, ".*\\.\\s*"),
+    grupo = str_trim(grupo),
     Valor = Valor / 1e6  # Pasamos el valor a Miles de Millones de € para el eje Y
-  )
+  ) %>%
+  filter(!is.na(grupo) & grupo != "" & !is.na(Valor)) %>%
+  filter(nchar(as.character(COD)) <= 2)
 
 # Representación de los datos de PIB por CCAA
 ggplot(pib_ccaa, aes(x = grupo, y = Valor, color = Valor)) +
@@ -233,7 +236,6 @@ ggplot(pib_ccaa, aes(x = grupo, y = Valor, color = Valor)) +
     axis.text.x = element_text(angle = 45, hjust = 1),
     plot.title = element_text(face = "bold")
   )
-
 # Se definde la gráfica de cajas 
 grafica_caja_pib <- function(df, titulo, etiqueta_x){
   ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, fill = grupo)) +
