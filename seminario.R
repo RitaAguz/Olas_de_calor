@@ -205,49 +205,63 @@ pib_raw <- fromJSON("INPUT/DATA/pib.json")
 
 pib_tabla <- pib_raw %>%
   as_tibble() %>%
-  select(COD, Nombre, T3_Unidad, T3_Escala, Data) %>%
-  unnest(cols = c(Data)) %>%
-  as_tibble()
-
-# Se toma los datos del PIB por CCAA
-pib_ccaa <- pib_tabla %>%
-  filter(!str_detect(Nombre, "(?i)Total Nacional|España|Extranjero")) %>%
-  filter(T3_TipoDato %in% c("Definitivo", "Provisional", "Avance")) %>%
   mutate(
-    grupo = str_remove(Nombre, ".*\\.\\s*"),
-    grupo = str_trim(grupo),
-    Valor = Valor / 1e6  # Pasamos el valor a Miles de Millones de € para el eje Y
+    nivel      = map_chr(MetaData, ~ .x$T3_Variable[1]),  # CCAA / Provincias / NUTS1 / Total
+    territorio = map_chr(MetaData, ~ .x$Nombre[1]),       # nombre original del INE
+    tipo       = map_chr(MetaData, ~ .x$Nombre[2])        # Dato base / Tasa de Variación Interanual / Estructura Porcentual
   ) %>%
-  filter(!is.na(grupo) & grupo != "" & !is.na(Valor)) %>%
-  filter(nchar(as.character(COD)) <= 2)
+  select(COD, nivel, territorio, tipo, T3_Unidad, T3_Escala, Data) %>%
+  unnest(Data) %>%
+  mutate(Valor = as.numeric(Valor))
 
-# Representación de los datos de PIB por CCAA
-ggplot(pib_ccaa, aes(x = grupo, y = Valor, color = Valor)) +
-  geom_point(size = 4, alpha = 0.8) +
-  scale_color_viridis_c(option = "inferno") +
-  labs(
-    title = "PIB por Comunidad Autónoma",
-    x = "Comunidad Autónoma",
-    y = "PIB (MM €)",
-    color = "PIB (MM €)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    plot.title = element_text(face = "bold")
-  )
-# Se definde la gráfica de cajas 
-grafica_caja_pib <- function(df, titulo, etiqueta_x){
-  ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, fill = grupo)) +
-    geom_boxplot(alpha = 0.4, outlier.shape = NA, show.legend = FALSE) +
-    geom_jitter(aes(colour = grupo), height = 0, width = 0.15, size = 2, show.legend = FALSE) +
-    labs(x = etiqueta_x, y = "PIB (Miles de millones de €)", title = titulo) +
-    theme_minimal() +
+
+# Filtramos solo las CCAA, sin provincias ni ciudades
+pib_ccaa <- pib_tabla %>%
+  filter(nivel == "Comunidades y Ciudades Autónomas") %>%
+  mutate(grupo = str_remove(territorio,
+                            ", Comunidad de|, Región de|, Principado de|, Comunidad Foral de"))
+# Filtramos por tasa de variación y por euros de manera independeinte
+pib_euros <- pib_ccaa %>%
+  filter(tipo == "Dato base") %>%
+  mutate(Valor = Valor / 1e6)          
+
+pib_tasa <- pib_ccaa %>%
+  filter(tipo == "Tasa de Variación Interanual")
+
+# Representación gráficas de puntos y de cajas
+grafica_puntos_pib <- function(df, titulo, etiqueta_y) {
+  ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, color = Valor)) +
+    geom_point(size = 3.5, alpha = 0.7) +
+    scale_color_viridis_c(option = "inferno") +
+    labs(title = titulo, x = "Comunidad Autónoma", y = etiqueta_y, color = etiqueta_y) +
+    theme_minimal(base_size = 11) +
     theme(
-      axis.text.x = element_text(angle = 30, hjust = 1),
-      plot.title = element_text(face = "bold")
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+      plot.title  = element_text(face = "bold")
     )
 }
 
-# Dibujamos la gráfica
-grafica_caja_pib(pib_ccaa, "Distribución del PIB por Comunidad Autónoma (2000-2025)", "Comunidad autónoma")
+grafica_caja_pib <- function(df, titulo, etiqueta_y) {
+  ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, fill = grupo)) +
+    geom_boxplot(alpha = 0.4, outlier.shape = NA, show.legend = FALSE) +
+    geom_jitter(aes(colour = grupo), height = 0, width = 0.15, size = 1.8,
+                show.legend = FALSE) +
+    labs(x = "Comunidad autónoma", y = etiqueta_y, title = titulo) +
+    theme_minimal(base_size = 11) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+      plot.title  = element_text(face = "bold")
+    )
+}
+
+# PIB en euros
+grafica_puntos_pib(pib_euros, "PIB por Comunidad Autónoma (2000-2025)",
+                   "PIB (miles de millones de €)")
+grafica_caja_pib(pib_euros, "Distribución del PIB por Comunidad Autónoma (2000-2025)",
+                 "PIB (miles de millones de €)")
+
+# Tasa de variación interanual
+grafica_puntos_pib(pib_tasa, "Variación interanual del PIB por Comunidad Autónoma (2001-2025)",
+                   "Tasa de variación (%)")
+grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB por CCAA (2001-2025)",
+                 "Tasa de variación (%)")
