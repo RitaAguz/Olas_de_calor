@@ -5,3 +5,5 @@ Dentro de los grupos de riesgo, la población infantil, y en especial los lactan
 No obstante, el impacto de las olas de calor no es igual para todas las poblaciones ni para todas las comunidades autónomas, el efecto de las olas de calor es influido por los factores socioeconómicos y ambientales. En España existen variedades climáticas significativas entre comunidades autónomas que se enlazan a desigualdades socioeconómicas.
 
 El producto interior bruto per cápita y el nivel de desarrollo económico por comunidad autónoma actúan como variables medidoras. Las regiones con un mayor PIB suelen tener acceso a mejores infraestructuras sanitarias, viviendas mejor acondicionadas y una mayor capacidad de respuesta frente a emergencias climáticas, lo que podría mitigar parte del impacto de las altas temperaturas en la salud infantil. 
+
+El informe tendrá como objetivo analizar si existe algún tipo de relación entre la intensidad y frecuencias de olas de calor, la mortalidad infantil y el PIB por comunidad autónoma en España. Con este informe buscaremos identificar patrones y cuantificar el impacto del PIB como factor protector.
