@@ -1,3 +1,6 @@
+#----------------------------------------------------------------------------------
+#INSTALACIÓN DE PAQUETES Y API
+#----------------------------------------------------------------------------------
 install.packages("scales")
 install.packages("vctrs")
 install.packages("lifecycle")
@@ -7,24 +10,19 @@ install.packages("climaemet")
 
 aemet_api_key("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzYW50aWFnb2hlcnJlcm9ydWlwZXJlekBnbWFpbC5jb20iLCJqdGkiOiJmMTk1MGIxNS02ZTRhLTRlNDItOTFmOC00N2Y2NWFlNTFiM2IiLCJleHAiOjE3OTkyMTgzNDUsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzkwNTc4MzQ1LCJ1c2VySWQiOiJmMTk1MGIxNS02ZTRhLTRlNDItOTFmOC00N2Y2NWFlNTFiM2IiLCJyb2xlIjoiIn0.LtEUbPj5lkXjO1rb2dew51L0hIMRshfRe1K-g4_8HL4", install = TRUE)
 
+#----------------------------------------------------------------------------------
+#CARGA DE LIBRERIAS
+#----------------------------------------------------------------------------------
+
 library(lubridate)
 library(dplyr)
 library(climaemet)
+library(ggplot2)
+library(jsonlite)
+library(tidyverse)
+library(tidyjson)
 
 
-clima_diario <- climaemet::aemet_daily_clim(
-  station = "all", 
-  start = "2000-01-01",
-  end = "2001-01-01"
-)
-head(clima_diario)
-
-#En España, la AEMET considera que hay una ola de calor cuando se registran
-#temperaturas máximas diarias superiores al percentil 95 de su serie hitórica
-#de referencia (meses de julio y agosto) en al menos eñ 10% de las estaciones
-#metereológicas, durante un periodo mínimo de tres días consecutivos,
-#AEMET considera que la referencia de datos son los registrados entre los años
-#1971 y 2000
 
 #no volver a ejecutar
 datos_referencia <- climaemet::aemet_daily_clim(
@@ -49,13 +47,30 @@ datos_trabajar <- dplyr::bind_rows(lista)
 
 
 #EJECUTAR A PARTIR DE AQUI
-library(lubridate)
-library(dplyr)
-library(climaemet)
-library(ggplot2)
-library(jsonlite)
-library(tidyverse)
-library(tidyjson)
+
+
+#----------------------------------------------------------------------------------
+#CARGA DE DATOS
+#----------------------------------------------------------------------------------
+
+#CARGAR EL ENVIROMENT GUARDADO COMO datosolascalor.RData
+
+peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
+
+pib_raw <- fromJSON("INPUT/DATA/pib.json")
+
+
+#----------------------------------------------------------------------------------
+#LIMPIEZA DE DATOS
+#----------------------------------------------------------------------------------
+
+
+
+# Limpiar formato de precipitación si tuviera comas
+datos_trabajo2 <- datos_trabajo %>%
+  mutate(prec = as.numeric(str_replace(prec, ",", ".")))
+
+
 
 #calculo percentil 95:
 p95 <- datos_referencia %>%
@@ -80,23 +95,53 @@ olas <- diario %>%
   mutate(nueva = is.na(lag(dia_calido)) |
            dia_calido != lag(dia_calido) |
            as.numeric(fecha - lag(fecha)) != 1,
-         racha = cumsum(nueva)) %>%
+         racha_id = cumsum(nueva)) %>%
   filter(dia_calido) %>%
-  group_by(racha) %>%
+  group_by(racha_id) %>%
   summarise(inicio = min(fecha),
             fin = max(fecha),
             dias = n(),
             max_pct = max(pct_sup),
             .groups = "drop") %>%
-  filter(dias >= 3)
-
+  filter(dias >= 3) %>%
+  mutate(racha = row_number()) #ID limpio del 1 al total de olas
 
 olas %>% count(año = year(inicio))
+#¿QUÉ DIMENSION DE LAS OLAS DE CALOR EJERCE UN MAYOR IMPACTO DIFERENCIAL SOBRE LA MORTALIDAD INFANTIL?:
 
-# importación datos de mortalidad
-peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
+#marco que dias forman parte de una ola de calor oficial
+dias_ola_oficial <- diario %>%
+  inner_join(olas %>% select(inicio, fin, racha), by = character()) %>%
+  filter(fecha >= inicio & fecha <= fin & dia_calido) %>%
+  select(fecha, racha)
 
-x <- fromJSON("INPUT/DATA/peninsula.json")
+#cruzo con los datos diarios de las estaciones para ver que provincia sufrio que
+olas_por_provincia <- datos_trabajar %>%
+  inner_join(dias_ola_oficial, by = "fecha") %>%
+  inner_join(p95, by = "indicativo") %>% 
+  filter(tmax > p95) %>%
+  mutate(anio = year(fecha),
+         exceso_termico = tmax - p95) %>%
+  group_by(provincia, anio, racha) %>%
+  summarise(
+    dias_ola = n_distinct(fecha),
+    intensidad_media = mean(exceso_termico, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(provincia, anio) %>%
+  summarise(
+    frecuencia_anual = n_distinct(racha),        #cuantas olas por provincia por año
+    duracion_media_ola = mean(dias_ola, na.rm = TRUE), #cuanto duraron de media
+    intensidad_acumulada = sum(intensidad_media, na.rm = TRUE), #intensidad global
+    .groups = "drop"
+  )
+
+head(olas_por_provincia)
+
+
+
+
+
 
 datos <- peninsula %>% 
   gather_array("serie") %>%
@@ -113,56 +158,7 @@ datos <- peninsula %>%
 View(datos)
 
 
-#Representación de los datos de olas de calor en ggplot2
 
-#Representación para visualizar cuando ocurrieron las rachas de calor, la intendidad y cuanto duró cada uan
-ggplot(olas, aes(x = inicio, xend = fin, y = reorder(factor(racha), inicio), color = max_pct)) +
-  geom_segment(linewidth = 2, lineend = "round") +
-  scale_color_viridis_c(option = "inferno") + #escala de calor
-  labs(
-    title = "Cronología e Intensidad de Olas de Calor",
-    subtitle = "Cada barra representa una racha desde su inicio hasta su fin",
-    x = "Fecha",
-    y = "Racha",
-    color = "Max Pct (%)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold")
-  )
-
-#Representacion para ver si las olas de calor más duraderas son también las más intensas
-ggplot(olas, aes(x = dias, y = max_pct, color = year(inicio))) +
-  geom_point(size = 4, alpha = 0.8) +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "gray50") +
-  labs(
-    title = "Relación entre Duración e Intensidad",
-    subtitle = "Comparativa de eventos de olas de calor",
-    x = "Duración (Días)",
-    y = "Intensidad Máxima (Max Pct %)",
-    color = "Año"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold")
-  )
-#Representacion para ver si la intensidad de las olas de calor aumenta según los años
-ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=max_pct))+
-  geom_point(size=4, alpha=0.8) +
-  geom_smooth(method = "lm", se=FALSE, linetype="dashed", color="gray50") +
-  labs(
-    title = "Relación entre Año e Intensidad",
-    x="Año",
-    y="Intensidad Máxima(Max Pct%",
-    color="Año"
-  )+
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face="bold")
-  )
-  
-# Representación cuántas muertes y cuánto varian entre años según la comunidad y la causa
 
 # se separa el nombre de la serie en columnas
 datos <- datos %>%
@@ -171,6 +167,8 @@ datos <- datos %>%
                        too_many = "drop")
 
 # se define la gráfica de cajas
+
+# Representación cuántas muertes y cuánto varian entre años según la comunidad y la causa
 grafica_caja <- function(df, titulo, etiqueta_x){
   ggplot(df, aes(x = fct_reorder(grupo, Valor), y = Valor, fill = grupo)) +
     geom_boxplot(alpha = 0.4, outlier.shape = NA, show.legend = FALSE) +
@@ -180,13 +178,13 @@ grafica_caja <- function(df, titulo, etiqueta_x){
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 30, hjust = 1))
 }
-  
+
 # se toman todas las causas y ambos sexos, por comunidad
 por_comunidad <- datos %>%
   filter(str_detect(causa, "Todas las causas"), sexo == "Total",
          comunidad != "Total Nacional", comunidad != "Extranjero") %>%
   rename(grupo = comunidad)
-  
+
 # se toma el total nacional y ambos sexos, por causa
 por_causa <- datos %>%
   filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
@@ -195,13 +193,9 @@ por_causa <- datos %>%
   summarise(Valor = sum(Valor), .groups = "drop") %>%
   rename(grupo = causa) %>%
   mutate(grupo = str_wrap(grupo, width = 25)) # para los nombres demasiado largos
-  
-# se dibujan las dos gráficas
-grafica_caja(por_comunidad, "Por comunidad (2000-2025)", "Comunidad autónoma")
-grafica_caja(por_causa, "Por causa (2000-2025)", "Causa de muerte")
 
-# Importación de datos de PIB 
-pib_raw <- fromJSON("INPUT/DATA/pib.json")
+
+
 
 pib_tabla <- pib_raw %>%
   as_tibble() %>%
@@ -227,6 +221,73 @@ pib_euros <- pib_ccaa %>%
 
 pib_tasa <- pib_ccaa %>%
   filter(tipo == "Tasa de Variación Interanual")
+
+
+
+#----------------------------------------------------------------------------------
+#REPRESENTACION
+#----------------------------------------------------------------------------------
+
+
+
+#Representación de los datos de olas de calor en ggplot2
+
+#Representación para visualizar cuando ocurrieron las rachas de calor, la intendidad y cuanto duró cada una
+#ggplot(olas, aes(x = inicio, xend = fin, y = reorder(factor(racha), inicio), color = max_pct)) +
+#  geom_segment(linewidth = 2, lineend = "round") +
+#  scale_color_viridis_c(option = "inferno") + #escala de calor
+#  labs(
+#    title = "Cronología e Intensidad de Olas de Calor",
+#    subtitle = "Cada barra representa una racha desde su inicio hasta su fin",
+#   x = "Fecha",
+#  y = "Racha",
+# color = "Max Pct (%)"
+#  ) +
+# theme_minimal(base_size = 12) +
+#theme(
+# panel.grid.minor = element_blank(),
+#plot.title = element_text(face = "bold")
+#)
+
+#Representacion para ver si las olas de calor más duraderas son también las más intensas
+ggplot(olas, aes(x = dias, y = max_pct, color = year(inicio))) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "Relación entre Duración e Intensidad",
+    subtitle = "Comparativa de eventos de olas de calor",
+    x = "Duración (Días)",
+    y = "Intensidad Máxima (Max Pct %)",
+    color = "Año"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold")
+  )
+#Representacion para ver si la intensidad de las olas de calor aumenta según los años 
+ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=-max_pct))+
+  geom_point(size=4, alpha=0.8) +
+  geom_smooth(method = "lm", se=FALSE, linetype="dashed", color="red") +
+  labs(
+    title = "Relación entre Año e Intensidad",
+    x="Año",
+    y="Intensidad Máxima(Max Pct%",
+    color="Año"
+  )+
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face="bold")
+  )
+
+
+
+
+
+# se dibujan las dos gráficas
+grafica_caja(por_comunidad, "Por comunidad (2000-2025)", "Comunidad autónoma")
+grafica_caja(por_causa, "Por causa (2000-2025)", "Causa de muerte")
+
+
 
 # Representación gráficas de puntos y de cajas
 grafica_puntos_pib <- function(df, titulo, etiqueta_y) {
