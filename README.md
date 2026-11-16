@@ -1,8 +1,8 @@
 # Impacto de olas de calor en la mortalidad infantil: el PIB como indicador de la capacidad de la adaptación
 
-Autores: _Santiago Herrero, Paula Manrique y Margarita Aguzarova_
-Asignatura: _Fuentes de datos Biomédicos y Web Semántica_
-Grado: _Ingeniería de la Salud en la Universidad de Burgos_
+Autores: _Santiago Herrero, Paula Manrique y Margarita Aguzarova_  
+Asignatura: _Fuentes de datos Biomédicos y Web Semántica_  
+Grado: _Ingeniería de la Salud en la Universidad de Burgos_  
 
 El cambio climático representa uno de los mayores desafíos sanitarios del siglo XXI. Entre sus manifestaciones más evidentes se encuentra el incremento en la frecuencia, intensidad y duración de las olas de calor. Estos episodios de temperaturas extremas tienen un impacto directo y contrastado sobre la salud pública, lo que podría afectar a las poblaciones mas vulnerables.
 
