@@ -233,6 +233,101 @@ pib_euros <- pib_ccaa %>%
 pib_tasa <- pib_ccaa %>%
   filter(tipo == "Tasa de Variación Interanual")
 
+# ¿CÓMO VARÍA LA MORTALIDAD INFANTIL DURANTE LOS AÑOS CON OLAS DE CALOR ENTRE LAS COMUNIDADES AUTÓNOMAS CON DISTINTO PIB?
+
+# Homogenización de los datos para poder trabajar con ellos
+ola_ccaa <- olas_por_provincia %>%
+  mutate(provincia = toupper(provincia)) %>%
+  mutate(grupo = case_when(
+    provincia %in% c("ALMERIA", "ALMERÍA", "CADIZ", "CÁDIZ", "CORDOBA", "CÓRDOBA", "GRANADA",
+                     "HUELVA", "JAEN", "JAÉN", "MALAGA", "MÁLAGA", "SEVILLA")        ~ "Andalucía",
+    provincia %in% c("HUESCA", "TERUEL", "ZARAGOZA")                                ~ "Aragón",
+    provincia %in% c("ASTURIAS")                                                    ~ "Asturias",
+    provincia %in% c("BALEARES", "ILLES BALEARS", "ISLAS BALEARES")                 ~ "Balears, Illes",
+    provincia %in% c("LAS PALMAS", "PALMAS, LAS", "SANTA CRUZ DE TENERIFE",
+                     "STA. CRUZ DE TENERIFE")                                       ~ "Canarias",
+    provincia %in% c("CANTABRIA")                                                   ~ "Cantabria",
+    provincia %in% c("AVILA", "ÁVILA", "BURGOS", "LEON", "LEÓN", "PALENCIA", "SALAMANCA",
+                     "SEGOVIA", "SORIA", "VALLADOLID", "ZAMORA")                    ~ "Castilla y León",
+    provincia %in% c("ALBACETE", "CIUDAD REAL", "CUENCA", "GUADALAJARA", "TOLEDO")  ~ "Castilla - La Mancha",
+    provincia %in% c("BARCELONA", "GIRONA", "GERONA", "LLEIDA", "LERIDA", "TARRAGONA") ~ "Cataluña",
+    provincia %in% c("ALICANTE", "CASTELLON", "CASTELLÓN", "VALENCIA")              ~ "Comunitat Valenciana",
+    provincia %in% c("BADAJOZ", "CACERES", "CÁCERES")                               ~ "Extremadura",
+    provincia %in% c("CORUÑA, A", "A CORUÑA", "LA CORUÑA", "LUGO", "OURENSE",
+                     "PONTEVEDRA")                                                  ~ "Galicia",
+    provincia %in% c("MADRID")                                                      ~ "Madrid",
+    provincia %in% c("MURCIA")                                                      ~ "Murcia",
+    provincia %in% c("NAVARRA")                                                     ~ "Navarra",
+    provincia %in% c("ALAVA", "ÁLAVA", "ARABA/ALAVA", "GIPUZKOA", "GUIPUZCOA",
+                     "BIZKAIA", "VIZCAYA")                                          ~ "País Vasco",
+    provincia %in% c("RIOJA, LA", "LA RIOJA")                                       ~ "Rioja, La",
+    provincia %in% c("CEUTA")                                                       ~ "Ceuta",
+    provincia %in% c("MELILLA")                                                     ~ "Melilla",
+    .default = NA
+  ))
+
+# Nos quedamos solo con la ccaa y el año que hubo ola
+años_con_ola <- ola_ccaa %>%
+  drop_na(grupo) %>%
+  distinct(grupo, anio) %>%
+  mutate(con_ola = "Con ola")
+
+# Cuento cuántos bebés mueren cada año en cada comunidad
+mortalidad <- por_comunidad %>%
+  mutate(grupo = str_remove(grupo, ", Comunidad de|, Región de|, Principado de|, Comunidad Foral de"),
+         anio  = as.integer(Anyo)) %>%
+  group_by(grupo, anio) %>%
+  summarise(muertes = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  filter(anio >= 2001)
+
+# Aquellas comunidades mas grandes (ej: Madrid) tienen una mayor natalidad que otras mas pequeñas, y esta diferencia hace que se distorsionen los datos.
+mortalidad <- mortalidad %>%
+  group_by(grupo) %>%
+  mutate(indice = muertes / mean(muertes) * 100)
+
+# Calculo el PIB de cada ccaa, y lo clasifico segun sea PIB alto o uno bajo 
+pib_nivel <- pib_euros %>%
+  group_by(grupo) %>%
+  summarise(pib_medio = mean(Valor, na.rm = TRUE), .groups = "drop") %>%
+  mutate(nivel_pib = ifelse(pib_medio > mean(pib_medio), "PIB alto", "PIB bajo"),
+         nivel_pib = factor(nivel_pib, levels = c("PIB bajo", "PIB alto"))) %>%
+  arrange(pib_medio)
+# Juntamos todos los datos obtenidos hasta el momento en una sola tabla
+total <- mortalidad %>%
+  left_join(pib_nivel,     by = "grupo") %>%
+  left_join(años_con_ola, by = c("grupo", "anio")) %>%
+  mutate(con_ola = ifelse(is.na(con_ola), "Sin ola", con_ola))
+# Tabla en la que podemos ver el indice medio segun las ccaa con olas y sin olas y según tenga PIB alto o bajo
+resumen <- total %>%
+  group_by(nivel_pib, con_ola) %>%
+  summarise(indice_medio = mean(indice, na.rm = TRUE),
+            n_anios_ccaa = n(),
+            .groups = "drop")
+print(resumen)
+
+# Gráfico de lo obtenido en la tabla de "resumen"
+ggplot(data = resumen, aes(x = nivel_pib, y = indice_medio, fill = con_ola)) +
+  geom_col(position = position_dodge(width = 0.85), width = 0.8) +
+  scale_fill_brewer(palette = "Paired") +
+  labs(title = "Mortalidad infantil según el PIB de la CCAA y la presencia de olas, o no de calor",
+       x = "", y = "Índice de mortalidad infantil (100 = año normal)",
+       fill = "Año") +
+  theme_classic()
+
+# Gráfico en el que se ve la mortalidad por ccaa segun su PIB
+por_ccaa <- panel %>%
+  filter(con_ola == "Con ola") %>%
+  group_by(grupo) %>%
+  summarise(indice_medio = mean(indice, na.rm = TRUE), .groups = "drop") %>%
+  left_join(pib_nivel, by = "grupo")
+
+ggplot(data = por_ccaa, aes(x = reorder(grupo, pib_medio), y = indice_medio, fill = nivel_pib)) +
+  geom_col() +
+  labs(title = "Mortalidad infantil en años con ola de calor por CCAA (de menor a mayor PIB)",
+       x = "", y = "Índice de mortalidad infantil (100 = año normal)",
+       fill = "Grupo de PIB") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))   
 
 
 #----------------------------------------------------------------------------------
