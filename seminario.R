@@ -41,7 +41,7 @@ for (y in 2001:2025) {
     end     = paste0(y, "-09-30")
   )
 }
-datos_trabajar <- dplyr::bind_rows(lista)
+
 
 
 
@@ -63,82 +63,93 @@ pib_raw <- fromJSON("INPUT/DATA/pib.json")
 #----------------------------------------------------------------------------------
 #LIMPIEZA DE DATOS
 #----------------------------------------------------------------------------------
+datos_trabajar <- dplyr::bind_rows(lista)
 
+#limpio el formato de precipitación y aseguro tipo date
+datos_trabajo2 <- datos_trabajar %>%
+  mutate(
+    fecha = as.Date(fecha),
+    prec = as.numeric(stringr::str_replace(prec, ",", "."))
+  )
 
-
-# Limpiar formato de precipitación si tuviera comas
-datos_trabajo2 <- datos_trabajo %>%
-  mutate(prec = as.numeric(str_replace(prec, ",", ".")))
-
-
-
-#calculo percentil 95:
+#calculo del percentil 95 por estacion
 p95 <- datos_referencia %>%
   filter(!is.na(tmax)) %>%
   group_by(indicativo) %>%
   summarise(p95 = quantile(tmax, 0.95), n_obs = n(), .groups = "drop") %>%
   filter(n_obs >= 600)
 
-#tabla de % de estaciones supera el umbral de calor requerido
-diario <- datos_trabajar %>%
+#tabla diaria del % de estaciones que superan el umbral de calor
+diario <- datos_trabajo2 %>%
   inner_join(p95, by = "indicativo") %>%
   filter(!is.na(tmax), !is.na(p95)) %>%
   group_by(fecha) %>%
-  summarise(n_est = n(),
-            pct_sup = mean(tmax > p95) * 100,
-            .groups = "drop") %>%
+  summarise(
+    n_est = n(),
+    pct_sup = mean(tmax > p95) * 100,
+    .groups = "drop"
+  ) %>%
   arrange(fecha) %>%
   mutate(dia_calido = pct_sup >= 10)
 
-#olas:
+#identificacion de rachas (olas de calor oficiales de >= 3 días)
 olas <- diario %>%
-  mutate(nueva = is.na(lag(dia_calido)) |
-           dia_calido != lag(dia_calido) |
-           as.numeric(fecha - lag(fecha)) != 1,
-         racha_id = cumsum(nueva)) %>%
+  mutate(
+    nueva = is.na(lag(dia_calido)) |
+      dia_calido != lag(dia_calido) |
+      as.numeric(fecha - lag(fecha)) != 1,
+    racha_id = cumsum(nueva)
+  ) %>%
   filter(dia_calido) %>%
   group_by(racha_id) %>%
-  summarise(inicio = min(fecha),
-            fin = max(fecha),
-            dias = n(),
-            max_pct = max(pct_sup),
-            .groups = "drop") %>%
-  filter(dias >= 3) %>%
-  mutate(racha = row_number()) #ID limpio del 1 al total de olas
-
-olas %>% count(año = year(inicio))
-#¿QUÉ DIMENSION DE LAS OLAS DE CALOR EJERCE UN MAYOR IMPACTO DIFERENCIAL SOBRE LA MORTALIDAD INFANTIL?:
-
-#marco que dias forman parte de una ola de calor oficial
-dias_ola_oficial <- diario %>%
-  inner_join(olas %>% select(inicio, fin, racha), by = character()) %>%
-  filter(fecha >= inicio & fecha <= fin & dia_calido) %>%
-  select(fecha, racha)
-
-#cruzo con los datos diarios de las estaciones para ver que provincia sufrio que
-olas_por_provincia <- datos_trabajar %>%
-  inner_join(dias_ola_oficial, by = "fecha") %>%
-  inner_join(p95, by = "indicativo") %>% 
-  filter(tmax > p95) %>%
-  mutate(anio = year(fecha),
-         exceso_termico = tmax - p95) %>%
-  group_by(provincia, anio, racha) %>%
   summarise(
-    dias_ola = n_distinct(fecha),
+    inicio = as.Date(min(fecha)),
+    fin = as.Date(max(fecha)),
+    dias = n(),
+    max_pct = max(pct_sup),
+    .groups = "drop"
+  ) %>%
+  filter(dias >= 3) %>%
+  mutate(racha = row_number()) #id del 1 al total de olas
+
+olas %>% count(año = lubridate::year(inicio))
+
+# ¿QUÉ DIMENSIÓN DE LAS OLAS DE CALOR EJERCE UN MAYOR IMPACTO DIFERENCIAL SOBRE LA MORTALIDAD INFANTIL?
+
+#expando cada ola oficial a sus días concretos usando id_ola para que no coincida con racha de aemet (viento)
+dias_ola_oficial <- do.call(rbind, lapply(seq_len(nrow(olas)), function(i) {
+  data.frame(
+    fecha = seq(as.Date(olas$inicio[i]), as.Date(olas$fin[i]), by = "day"),
+    id_ola = olas$racha[i]
+  )
+}))
+
+#cruzo con los datos diarios de las estaciones para calcular metricas por provincia y año
+olas_por_provincia <- datos_trabajo2 %>%
+  mutate(fecha = as.Date(fecha)) %>%
+  inner_join(dias_ola_oficial, by = "fecha") %>%
+  inner_join(p95, by = "indicativo") %>%
+  filter(tmax > p95) %>%
+  mutate(
+    anio = lubridate::year(fecha),
+    exceso_termico = tmax - p95
+  ) %>%
+  ungroup() %>%
+  group_by(provincia, anio, id_ola) %>%
+  summarise(
+    dias_ola = dplyr::n_distinct(fecha),
     intensidad_media = mean(exceso_termico, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   group_by(provincia, anio) %>%
   summarise(
-    frecuencia_anual = n_distinct(racha),        #cuantas olas por provincia por año
-    duracion_media_ola = mean(dias_ola, na.rm = TRUE), #cuanto duraron de media
-    intensidad_acumulada = sum(intensidad_media, na.rm = TRUE), #intensidad global
+    frecuencia_anual = dplyr::n_distinct(id_ola),
+    duracion_media_ola = mean(dias_ola, na.rm = TRUE),
+    intensidad_acumulada = sum(intensidad_media, na.rm = TRUE),
     .groups = "drop"
   )
 
 head(olas_por_provincia)
-
-
 
 
 
@@ -326,3 +337,4 @@ grafica_puntos_pib(pib_tasa, "Variación interanual del PIB por Comunidad Autón
                    "Tasa de variación (%)")
 grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB por CCAA (2001-2025)",
                  "Tasa de variación (%)")
+
