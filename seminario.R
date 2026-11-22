@@ -114,7 +114,7 @@ olas <- diario %>%
 
 olas %>% count(año = lubridate::year(inicio))
 
-# ¿QUÉ DIMENSIÓN DE LAS OLAS DE CALOR EJERCE UN MAYOR IMPACTO DIFERENCIAL SOBRE LA MORTALIDAD INFANTIL?
+
 
 #expando cada ola oficial a sus días concretos usando id_ola para que no coincida con racha de aemet (viento)
 dias_ola_oficial <- do.call(rbind, lapply(seq_len(nrow(olas)), function(i) {
@@ -333,57 +333,6 @@ ggplot(data = por_ccaa, aes(x = reorder(grupo, pib_medio), y = indice_medio, fil
 
 
 
-#Representación de los datos de olas de calor en ggplot2
-
-#Representación para visualizar cuando ocurrieron las rachas de calor, la intendidad y cuanto duró cada una
-#ggplot(olas, aes(x = inicio, xend = fin, y = reorder(factor(racha), inicio), color = max_pct)) +
-#  geom_segment(linewidth = 2, lineend = "round") +
-#  scale_color_viridis_c(option = "inferno") + #escala de calor
-#  labs(
-#    title = "Cronología e Intensidad de Olas de Calor",
-#    subtitle = "Cada barra representa una racha desde su inicio hasta su fin",
-#   x = "Fecha",
-#  y = "Racha",
-# color = "Max Pct (%)"
-#  ) +
-# theme_minimal(base_size = 12) +
-#theme(
-# panel.grid.minor = element_blank(),
-#plot.title = element_text(face = "bold")
-#)
-
-#Representacion para ver si las olas de calor más duraderas son también las más intensas
-ggplot(olas, aes(x = dias, y = max_pct, color = year(inicio))) +
-  geom_point(size = 4, alpha = 0.8) +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "gray50") +
-  labs(
-    title = "Relación entre Duración e Intensidad",
-    subtitle = "Comparativa de eventos de olas de calor",
-    x = "Duración (Días)",
-    y = "Intensidad Máxima (Max Pct %)",
-    color = "Año"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold")
-  )
-#Representacion para ver si la intensidad de las olas de calor aumenta según los años 
-ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=-max_pct))+
-  geom_point(size=4, alpha=0.8) +
-  geom_smooth(method = "lm", se=FALSE, linetype="dashed", color="red") +
-  labs(
-    title = "Relación entre Año e Intensidad",
-    x="Año",
-    y="Intensidad Máxima(Max Pct%",
-    color="Año"
-  )+
-  theme_minimal(base_size = 12) +
-  theme(
-    plot.title = element_text(face="bold")
-  )
-
-
-
 
 
 # se dibujan las dos gráficas
@@ -479,3 +428,57 @@ ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
        y = "Mortalidad respecto a lo esperado") +
   theme_minimal()
 
+
+# 2 # ¿Qué dimensión de las olas de calor (intensidad o duración) 
+# ejerce un mayor impacto sobre la mortalidad infantil?
+
+#resumo las metricas de ola de calor por CCAA y año 
+clima_ccaa_resumen <- ola_ccaa %>%
+  drop_na(grupo) %>%
+  group_by(grupo, anio) %>%
+  summarise(
+    frecuencia_anual = sum(frecuencia_anual, na.rm = TRUE),
+    duracion_media_ola = mean(duracion_media_ola, na.rm = TRUE),
+    intensidad_acumulada = sum(intensidad_acumulada, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# creo mortalidad_ccaa desde por_comunidad homogeneizando grupo
+mortalidad_ccaa <- por_comunidad %>%
+  mutate(
+    grupo = str_remove(grupo, ", Comunidad de|, Región de|, Principado de|, Comunidad Foral de"),
+    anio = as.numeric(Anyo),
+    muertes = as.numeric(Valor)
+  ) %>%
+  group_by(grupo, anio) %>%
+  summarise(muertes = sum(muertes, na.rm = TRUE), .groups = "drop")
+
+#uno y paso a formato largo para comparar duración e intensidad
+datos_grafica <- mortalidad_ccaa %>%
+  inner_join(clima_ccaa_resumen, by = c("grupo", "anio")) %>%
+  pivot_longer(
+    cols = c(duracion_media_ola, intensidad_acumulada),
+    names_to = "dimension",
+    values_to = "valor_dimension"
+  ) %>%
+  mutate(
+    dimension = recode(
+      dimension,
+      duracion_media_ola = "Duración media de ola (días)",
+      intensidad_acumulada = "Intensidad acumulada (°C)"
+    )
+  )
+
+#grafica para comparar
+ggplot(datos_grafica, aes(x = valor_dimension, y = muertes)) +
+  geom_point(alpha = 0.45, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, color = "orange", linewidth = 0.9) +
+  facet_wrap(~ dimension, scales = "free_x") +
+  labs(
+    title = "Mortalidad infantil según duración e intensidad de las olas de calor",
+    subtitle = "Comparativa por Comunidad Autónoma y año",
+    x = "Magnitud de la dimensión térmica",
+    y = "Muertes en menores de 1 año"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold"))
