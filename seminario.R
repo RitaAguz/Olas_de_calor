@@ -37,6 +37,8 @@ peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
 
 pib_raw <- fromJSON("INPUT/DATA/pib.json")
 
+load("./INPUT/DATA/datosolascalor.RData")
+
 
 #----------------------------------------------------------------------------------
 #LIMPIEZA DE DATOS
@@ -211,6 +213,37 @@ pib_euros <- pib_ccaa %>%
 pib_tasa <- pib_ccaa %>%
   filter(tipo == "Tasa de Variación Interanual")
 
+# Homogenización de los datos para poder trabajar con ellos
+ola_ccaa <- olas_por_provincia %>%
+  mutate(provincia = toupper(provincia)) %>%
+  mutate(grupo = case_when(
+    provincia %in% c("ALMERIA", "ALMERÍA", "CADIZ", "CÁDIZ", "CORDOBA", "CÓRDOBA", "GRANADA",
+                     "HUELVA", "JAEN", "JAÉN", "MALAGA", "MÁLAGA", "SEVILLA")        ~ "Andalucía",
+    provincia %in% c("HUESCA", "TERUEL", "ZARAGOZA")                                ~ "Aragón",
+    provincia %in% c("ASTURIAS")                                                    ~ "Asturias",
+    provincia %in% c("BALEARES", "ILLES BALEARS", "ISLAS BALEARES")                 ~ "Balears, Illes",
+    provincia %in% c("LAS PALMAS", "PALMAS, LAS", "SANTA CRUZ DE TENERIFE",
+                     "STA. CRUZ DE TENERIFE")                                       ~ "Canarias",
+    provincia %in% c("CANTABRIA")                                                   ~ "Cantabria",
+    provincia %in% c("AVILA", "ÁVILA", "BURGOS", "LEON", "LEÓN", "PALENCIA", "SALAMANCA",
+                     "SEGOVIA", "SORIA", "VALLADOLID", "ZAMORA")                    ~ "Castilla y León",
+    provincia %in% c("ALBACETE", "CIUDAD REAL", "CUENCA", "GUADALAJARA", "TOLEDO")  ~ "Castilla - La Mancha",
+    provincia %in% c("BARCELONA", "GIRONA", "GERONA", "LLEIDA", "LERIDA", "TARRAGONA") ~ "Cataluña",
+    provincia %in% c("ALICANTE", "CASTELLON", "CASTELLÓN", "VALENCIA")              ~ "Comunitat Valenciana",
+    provincia %in% c("BADAJOZ", "CACERES", "CÁCERES")                               ~ "Extremadura",
+    provincia %in% c("CORUÑA, A", "A CORUÑA", "LA CORUÑA", "LUGO", "OURENSE",
+                     "PONTEVEDRA")                                                  ~ "Galicia",
+    provincia %in% c("MADRID")                                                      ~ "Madrid",
+    provincia %in% c("MURCIA")                                                      ~ "Murcia",
+    provincia %in% c("NAVARRA")                                                     ~ "Navarra",
+    provincia %in% c("ALAVA", "ÁLAVA", "ARABA/ALAVA", "GIPUZKOA", "GUIPUZCOA",
+                     "BIZKAIA", "VIZCAYA")                                          ~ "País Vasco",
+    provincia %in% c("RIOJA, LA", "LA RIOJA")                                       ~ "Rioja, La",
+    provincia %in% c("CEUTA")                                                       ~ "Ceuta",
+    provincia %in% c("MELILLA")                                                     ~ "Melilla",
+    .default = NA
+  ))
+
 #----------------------------------------------------------------------------------
 #REPRESENTACION
 #----------------------------------------------------------------------------------
@@ -266,6 +299,7 @@ grafica_puntos_pib(pib_tasa, "Variación interanual del PIB por Comunidad Autón
                    "Tasa de variación (%)")
 grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB por CCAA (2001-2025)",
                  "Tasa de variación (%)")
+
 
 
 #----------------------------------------------------------------------------------
@@ -378,36 +412,6 @@ save(duracionVSintensidad, file ="OUTPUT/GRAPHICS/graficas_pregunta2.RData")
 
 # 3. ¿Cómo varía la mortalidad infantil durante los años con olas de calor entre las comunidades autónomas con distinto PIB?
 
-# Homogenización de los datos para poder trabajar con ellos
-ola_ccaa <- olas_por_provincia %>%
-  mutate(provincia = toupper(provincia)) %>%
-  mutate(grupo = case_when(
-    provincia %in% c("ALMERIA", "ALMERÍA", "CADIZ", "CÁDIZ", "CORDOBA", "CÓRDOBA", "GRANADA",
-                     "HUELVA", "JAEN", "JAÉN", "MALAGA", "MÁLAGA", "SEVILLA")        ~ "Andalucía",
-    provincia %in% c("HUESCA", "TERUEL", "ZARAGOZA")                                ~ "Aragón",
-    provincia %in% c("ASTURIAS")                                                    ~ "Asturias",
-    provincia %in% c("BALEARES", "ILLES BALEARS", "ISLAS BALEARES")                 ~ "Balears, Illes",
-    provincia %in% c("LAS PALMAS", "PALMAS, LAS", "SANTA CRUZ DE TENERIFE",
-                     "STA. CRUZ DE TENERIFE")                                       ~ "Canarias",
-    provincia %in% c("CANTABRIA")                                                   ~ "Cantabria",
-    provincia %in% c("AVILA", "ÁVILA", "BURGOS", "LEON", "LEÓN", "PALENCIA", "SALAMANCA",
-                     "SEGOVIA", "SORIA", "VALLADOLID", "ZAMORA")                    ~ "Castilla y León",
-    provincia %in% c("ALBACETE", "CIUDAD REAL", "CUENCA", "GUADALAJARA", "TOLEDO")  ~ "Castilla - La Mancha",
-    provincia %in% c("BARCELONA", "GIRONA", "GERONA", "LLEIDA", "LERIDA", "TARRAGONA") ~ "Cataluña",
-    provincia %in% c("ALICANTE", "CASTELLON", "CASTELLÓN", "VALENCIA")              ~ "Comunitat Valenciana",
-    provincia %in% c("BADAJOZ", "CACERES", "CÁCERES")                               ~ "Extremadura",
-    provincia %in% c("CORUÑA, A", "A CORUÑA", "LA CORUÑA", "LUGO", "OURENSE",
-                     "PONTEVEDRA")                                                  ~ "Galicia",
-    provincia %in% c("MADRID")                                                      ~ "Madrid",
-    provincia %in% c("MURCIA")                                                      ~ "Murcia",
-    provincia %in% c("NAVARRA")                                                     ~ "Navarra",
-    provincia %in% c("ALAVA", "ÁLAVA", "ARABA/ALAVA", "GIPUZKOA", "GUIPUZCOA",
-                     "BIZKAIA", "VIZCAYA")                                          ~ "País Vasco",
-    provincia %in% c("RIOJA, LA", "LA RIOJA")                                       ~ "Rioja, La",
-    provincia %in% c("CEUTA")                                                       ~ "Ceuta",
-    provincia %in% c("MELILLA")                                                     ~ "Melilla",
-    .default = NA
-  ))
 
 # Nos quedamos solo con la ccaa y el año que hubo ola
 años_con_ola <- ola_ccaa %>%
