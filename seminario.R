@@ -457,7 +457,7 @@ datos_grafica <- mortalidad_ccaa %>%
   )
 
 #grafica para comparar
-ggplot(datos_grafica, aes(x = valor_dimension, y = muertes)) +
+duracionVSintensidad<-ggplot(datos_grafica, aes(x = valor_dimension, y = muertes)) +
   geom_point(alpha = 0.45, size = 2) +
   geom_smooth(method = "lm", se = TRUE, color = "orange", linewidth = 0.9) +
   facet_wrap(~ dimension, scales = "free_x") +
@@ -469,4 +469,6 @@ ggplot(datos_grafica, aes(x = valor_dimension, y = muertes)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
-
+duracionVSintensidad
+#guardo la gráfica
+save(duracionVSintensidad, file ="OUTPUT/GRAPHICS/graficas_pregunta2.RData")
