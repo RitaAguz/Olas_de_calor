@@ -445,31 +445,37 @@ olas_anuales <- ola_ccaa %>%
   summarise(n_olas = max(frecuencia_anual), .groups = "drop")
 
 # se unen las olas con la mortalidad
-pregunta1 <- mortalidad %>%
-  ungroup() %>%
-  left_join(olas_anuales, by = c("grupo", "anio")) %>%
-  mutate(n_olas = replace_na(n_olas, 0))
+pregunta1 <- pregunta1 %>%
+  group_by(grupo) %>%
+  mutate(esperado = fitted(lm(muertes ~anio)),
+         indice_aj = muertes / esperado * 100) %>%
+  ungroup()
 
 # se dibuja la dispersión interactiva
-p <- ggplot(pregunta1, aes(x = n_olas, y = indice, colour = grupo,
-                           text = paste("Año:", anio))) +
-  geom_jitter(width = 0.1, size = 2) +
+p <- ggplot(pregunta1, aes(x = factor(n_olas), y = indice_aj,
+                           text = paste(grupo, "-", anio))) +
+  geom_boxplot(alpha = 0.3, outlier.shape = NA, fill = "palevioletred") +
+  geom_jitter(width = 0.1, size = 2, colour = "palevioletred") +
+  geom_hline(yintercept = 100, linetype = "dashed") +
   labs(x = "Número de olas de calor en el año",
-       y = "Índice de mortalidad infantil (100 = año normal)",
+       y = "Mortalidad infantil respecto a lo esperado (100 = lo esperado)",
        colour = "Comunidad autónoma") +
   theme_minimal()
-plotly::ggplotly(p)
+plotly::ggplotly(p, tooltip = "text")
 
 # se calcula el índice medio según el número de olas
 barras <- pregunta1 %>%
   group_by(n_olas) %>%
-  summarise(indice_medio = mean(indice), .groups = "drop")
+  summarise(indice_medio = mean(indice_aj), .groups = "drop") %>%
+  mutate(supera = indice_medio > 100)
 
 # se dibuja la gráfica de barras
-ggplot(barras, aes(x = factor(n_olas), y = indice_medio)) +
-  geom_col(fill = "darkorange") +
+ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("TRUE" = "palevioletred", "FALSE" = "lightpink")) +
   geom_hline(yintercept = 100, linetype = "dashed") +
+  coord_cartesian(ylim = c(80,115)) + # se fija el inicio del eje en 80 para ver mejor las diferencias
   labs(x = "Número de olas de calor en el año",
-       y = "Índice de mortalidad infantil medio") +
+       y = "Mortalidad respecto a lo esperado") +
   theme_minimal()
 
