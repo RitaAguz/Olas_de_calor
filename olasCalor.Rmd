@@ -2,9 +2,12 @@
 title: 'Impacto de olas de calor en la mortalidad infantil: el PIB como indicador
   de la capacidad de la adaptación'
 author: "Santiago Herrero Ruipérez, Paula Manrique Álvarez, Margarita Aguzarova"
-date: "2026-10-19"
+date: "`r Sys.Date()`"
+bibliography: Referencias.bib
 output: html_document
 ---
+
+
 
 ## 1. Introducción 
 
@@ -20,7 +23,29 @@ El objetivo general de este seminario es estudiar si existe alguna relación ent
 
 ## 4. Metodología
 
+### 4.1 Datos de las olas de calor
+
+### 4.2 Datos de mortalidad infantil
+Los datos de mortalidad se sacaron de la *Estadística de defunciones según la causa de muerte* del Instituto Nacional de Estadística [@INEdefunciones], descargados en formato `.json`.
+
+Se filtraron las defunciones de menores de 1 año, los años 2001-2025 y se quitaron "Extranjero" y "Total Nacional" para trabajar sólo con las comunidades autónomas.
+
+### 4.3 Datos del PIB
+
+### 4.4 Unión de los datos
+
 ## 5. Resultados / Discusión
+
+### 5.1 Pregunta 1: ¿Cómo varía la mortalidad infantil según el número de olas de calor en cada comunidad autónoma?
+
+```{r, echo=FALSE}
+plotly::ggplotly(p, tooltip = "text")
+p1
+```
+
+### 5.2
+
+### 5.3 
 
 ## 6. Conclusión
 

@@ -168,6 +168,9 @@ datos <- peninsula %>%
 
 View(datos)
 
+# se guarda la tabla de mortalidad
+save(datos, file = "OUTPUT/DATA/tabla_mortalidad.RData")
+
 
 # se separa el nombre de la serie en columnas
 datos <- datos %>%
@@ -336,9 +339,13 @@ ggplot(data = por_ccaa, aes(x = reorder(grupo, pib_medio), y = indice_medio, fil
 
 
 # se dibujan las dos gráficas
-grafica_caja(por_comunidad, "Por comunidad (2001-2025)", "Comunidad autónoma")
-grafica_caja(por_causa, "Por causa (2001-2025)", "Causa de muerte")
+g_comunidad <- grafica_caja(por_comunidad, "Por comunidad (2001-2025)", "Comunidad autónoma")
+g_causa <- grafica_caja(por_causa, "Por causa (2001-2025)", "Causa de muerte")
+g_comunidad
+g_causa
 
+# se guardan las gráficas de representación
+save(g_comunidad, g_causa, file = "OUTPUT/GRAPHICS/graficas_mortalidad.RData")
 
 
 # Representación gráficas de puntos y de cajas
@@ -384,8 +391,7 @@ grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB po
 #PREGUNTAS
 #----------------------------------------------------------------------------------
 
-# 1. ¿CÓMO VARIA LA MORTALIDAD INFANTIL SEGÚN EL NÚMERO DE OLAS DE CALOR EN 
-# CADA COMUNIDAD AUTÓNOMA DE 2001 A 2025?
+# 1. ¿Cómo varía la mortalidad infantil según el número de olas de calor en cada comunidad autónoma?
 
 # se cuentan las olas por comunidad y año
 olas_anuales <- ola_ccaa %>%
@@ -419,7 +425,7 @@ barras <- pregunta1 %>%
   mutate(supera = indice_medio > 100)
 
 # se dibuja la gráfica de barras
-ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
+p1 <- ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
   geom_col(show.legend = FALSE) +
   scale_fill_manual(values = c("TRUE" = "palevioletred", "FALSE" = "lightpink")) +
   geom_hline(yintercept = 100, linetype = "dashed") +
@@ -427,7 +433,10 @@ ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
   labs(x = "Número de olas de calor en el año",
        y = "Mortalidad respecto a lo esperado") +
   theme_minimal()
+p1
 
+# se guardan las gráficas de la pregunta 1
+save(p, p1, file ="OUTPUT/GRAPHICS/graficas_pregunta1.RData")
 
 # 2 # ¿Qué dimensión de las olas de calor (intensidad o duración) 
 # ejerce un mayor impacto sobre la mortalidad infantil?
