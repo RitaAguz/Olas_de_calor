@@ -31,6 +31,11 @@ Los datos de mortalidad se sacaron de la *Estadística de defunciones según la 
 Se filtraron las defunciones de menores de 1 año, los años 2001-2025 y se quitaron "Extranjero" y "Total Nacional" para trabajar sólo con las comunidades autónomas.
 
 ### 4.3 Datos del PIB
+Los datos del PIB se sacaron de la *Contabilidad Regional de España* del Instituto Nacional de Estadística [@INEpib], concretamente de la tabla del PIB a precios de mercado, a precios corrientes, por comunidades y ciudades autónomas y provincias, descargada en formato `.json`. 
+
+Se conservaron solo las comunidades y ciudades autónomas,cubriendo los años del 2000 a 2025.
+Después se separaron dos series: el PIB en euros y la tasa de variación interanual. 
+También se simplificaron los nombres de las comunidades para que coincidan con los de los datos de mortalidad. 
 
 ### 4.4 Unión de los datos
 
@@ -45,9 +50,19 @@ p1
 
 ### 5.2
 
-### 5.3 
+### 5.3 Pregunta 2: ¿Cómo varía la mortalidad infantil durante los años con olas de calor entre las comunidades autónomas con distinto PIB?
+
 
 ## 6. Conclusión
+En este seminario se ha analizado la relación entre las olas de calor y la mortalidad infantil en España entre 2001 y 2025, combinando datos de temperatura de la Agencia Estatal de Meteorología, datos de defunciones de menores de un año del Instituto Nacional de Estadística y datos de PIB regional del mismo organismo. A partir de ellos se han planteado tres preguntas: cómo varía la mortalidad infantil según el número de olas de calor, qué dimensión de las olas (duración o intensidad) se asocia más con ella y si esta relación difiere entre comunidades autónomas con distinto nivel de PIB.
+
+Respeco a la primera pregunta .... COMPLETAR
+
+En la segunda pregunta, la duración media de las olas de calor no muestra una relación clara con el número de muertes infantiles, ya que la recta de tendencia es prácticamente plana y el intervalo de confianza se ensancha hacia valores altos. La intensidad acumulada presenta una pendiente positiva más marcada, por lo que es la dimensión con una tendencia más visible. No obstante, al tratarse de datos anuales y autonómicos, la dispersión es elevada y unos pocos valores extremos influyen en la recta, por lo que esta asociación debe interpretarse como visual y no concluyente. Además, la intensidad acumulada se obtiene sumando los valores de las provincias de cada comunidad, lo que puede favorecer a las comunidades con más provincias, que a su vez tienden a registrar más muertes.
+
+En la tercera pregunta, al comparar cada comunidad con su propia media, no se observa que el nivel de PIB modifique de forma apreciable la mortalidad infantil en los años con olas de calor: el índice medio es de 98,4 en las comunidades de PIB bajo y de 99,0 en las de PIB alto. En los años sin ola, los valores son de 105,7 y 107,8 respectivamente. Estos resultados no son los esperados, y se explican en gran parte por la limitación de los datos: al no disponer de la mortalidad por días, sino por años, no es posible aislar las muertes que ocurrieron durante cada ola de calor, y su efecto queda diluido entre las muertes del resto del año. Los años con ola presentan además menos mortalidad que los años sin ola, lo que se atribuye a la tendencia descendente de la mortalidad infantil desde 2001 y a la mayor frecuencia de olas en los años recientes, y no a un efecto protector del calor.
+
+
 
 ## 7. Enlace al repositorio 
 
