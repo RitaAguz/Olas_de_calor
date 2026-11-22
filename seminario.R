@@ -308,6 +308,14 @@ grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB po
 
 # 1. ¿Cómo varía la mortalidad infantil según el número de olas de calor en cada comunidad autónoma?
 
+# Cuento cuántos bebés mueren cada año en cada comunidad (copia pega de lo de la pregunta 3, si no da error)
+mortalidad <- por_comunidad %>%
+  mutate(grupo = str_remove(grupo, ", Comunidad de|, Región de|, Principado de|, Comunidad Foral de"),
+         anio  = as.integer(Anyo)) %>%
+  group_by(grupo, anio) %>%
+  summarise(muertes = sum(Valor, na.rm = TRUE), .groups = "drop") %>%
+  filter(anio >= 2001)
+
 # se cuentan las olas por comunidad y año
 olas_anuales <- ola_ccaa %>%
   drop_na(grupo) %>%
@@ -315,6 +323,11 @@ olas_anuales <- ola_ccaa %>%
   summarise(n_olas = max(frecuencia_anual), .groups = "drop")
 
 # se unen las olas con la mortalidad
+pregunta1 <- mortalidad %>%
+  left_join(olas_anuales, by = c("grupo", "anio")) %>%
+  mutate(n_olas = replace_na(n_olas, 0))
+
+# se calcula la mortalidad esperada según la tendencia de cada comunidad
 pregunta1 <- pregunta1 %>%
   group_by(grupo) %>%
   mutate(esperado = fitted(lm(muertes ~anio)),
