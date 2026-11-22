@@ -10,4 +10,4 @@ El informe tendrá como objetivo analizar si existe algún tipo de relación ent
 
 
 
-En España, la AEMET considera que hay una ola de calor cuando se registran temperaturas máximas diarias superiores al percentil 95 de su serie histórica de referencia (meses de julio y agosto) en al menos eñ 10% de las estaciones metereológicas, durante un periodo mínimo de tres días consecutivos, AEMET considera que la referencia de datos son los registrados entre los años 1971 y 2000
+En España, la AEMET considera que hay una ola de calor cuando se registran temperaturas máximas diarias superiores al percentil 95 de su serie histórica de referencia (meses de julio y agosto) en al menos eñ 10% de las estaciones metereológicas, durante un periodo mínimo de tres días consecutivos, AEMET considera que la referencia de datos son los registrados entre los años 1971 y 2000.

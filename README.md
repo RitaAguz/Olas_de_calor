@@ -32,4 +32,4 @@ El objetivo general de este seminario es estudiar si existe alguna relación ent
 
 
 ## Estructura del proyecto
-'INPUT/DATA': contiene dos archivos JSON
+'INPUT/DATA': contiene dos archivos JSON y un archivo RData
