@@ -24,28 +24,6 @@ library(tidyjson)
 
 
 
-#no volver a ejecutar
-datos_referencia <- climaemet::aemet_daily_clim(
-  station = "all",
-  start = "1971-01-01",
-  end = "2000-12-31"
-) %>% 
-  filter(month(fecha) %in% c(7,8))
-head(datos_referencia)
-#no volver a ejecutar
-lista <- list()
-for (y in 2001:2025) {
-  lista[[as.character(y)]] <- climaemet::aemet_daily_clim(
-    station = "all",
-    start   = paste0(y, "-05-01"),
-    end     = paste0(y, "-09-30")
-  )
-}
-
-
-
-
-
 #EJECUTAR A PARTIR DE AQUI
 
 
