@@ -7,15 +7,37 @@ bibliography: Referencias.bib
 output: html_document
 ---
 
+```{r include=FALSE}
 
+# para poder visualizar las gráficas
+library(tidyverse)
+library(plotly)
 
+load("OUTPUT/GRAPHICS/graficas_pregunta1.Rdata")
+load("OUTPUT/GRAPHICS/graficas_pregunta2.Rdata")
+load("OUTPUT/GRAPHICS/graficas_pregunta3.Rdata")
+load("OUTPUT/DATA/tabla_resumen_pib.Rdata")
+```
 ## 1. Introducción 
 
+El cambio climático representa uno de los mayores desafíos sanitarios del siglo XXI. Entre sus manifestaciones más evidentes se encuentra el incremento en la frecuencia, intensidad y duración de las olas de calor. Estos episodios de temperaturas extremas tienen un impacto directo y contrastado sobre la salud pública, lo que podría afectar a las poblaciones mas vulnerables.
+
+Dentro de los grupos de riesgo, la población infantil, y en especial los lactantes y menores de un año, presenta una alta vulnerabilidad fisiológica frente al estrés térmico. Su termorregulación es inmadura, su gran superficie corporal en relación con su masa y la dependencia para su cuidado provocan una exposición a la deshidratación y fallos sistémicos desencadenados por las altas temperaturas.
+
+No obstante, el impacto de las olas de calor no es igual para todas las poblaciones ni para todas las comunidades autónomas, el efecto de las olas de calor es influido por los factores socioeconómicos y ambientales. En España existen variedades climáticas significativas entre comunidades autónomas que se enlazan a desigualdades socioeconómicas.
+
+El producto interior bruto per cápita y el nivel de desarrollo económico por comunidad autónoma actúan como variables medidoras. Las regiones con un mayor PIB suelen tener acceso a mejores infraestructuras sanitarias, viviendas mejor acondicionadas y una mayor capacidad de respuesta frente a emergencias climáticas, lo que podría mitigar parte del impacto de las altas temperaturas en la salud infantil. 
+
+El informe tendrá como objetivo analizar si existe algún tipo de relación entre la intensidad y frecuencias de olas de calor, la mortalidad infantil y el PIB por comunidad autónoma en España. Con este informe buscaremos identificar patrones y cuantificar el impacto del PIB como factor protector.
+
+En España, la AEMET considera que hay una ola de calor cuando se registran temperaturas máximas diarias superiores al percentil 95 de su serie histórica de referencia (meses de julio y agosto) en al menos el 10% de las estaciones metereológicas, durante un periodo mínimo de tres días consecutivos, AEMET considera que la referencia de datos son los registrados entre los años 1971 y 2000.
+
+
 ## 2. Objetivo general
-El objetivo general de este seminario es estudiar si existe alguna relación entre las olas de calor y la mortalidad infantil en las comunidades autónomas de España durante el periodo 2000-2025, teniendo en cuenta el producto interior bruto (PIB) como posible factor que pueda afectar esa relación.
+El objetivo general de este seminario es estudiar si existe alguna relación entre las olas de calor y la mortalidad infantil en las comunidades autónomas de España durante el periodo 2001-2025, teniendo en cuenta el producto interior bruto (PIB) como posible factor que pueda afectar esa relación.
 
 ## 3. Objetivos específicos 
-1. Estudio de la relación entre el número de olas de calor y la mortalidad infantil por comunidades autónomas en el periodo 2000-2025.
+1. Estudio de la relación entre el número de olas de calor y la mortalidad infantil por comunidades autónomas en el periodo 2001-2025.
 
 2. Estudio de la relación entre la duración e intensidad de las olas de calor y la mortalidad infantil. 
 
@@ -39,6 +61,11 @@ Después se separaron dos series: el PIB en euros y la tasa de variación intera
 También se simplificaron los nombres de las comunidades para que coincidan con los de los datos de mortalidad. 
 
 ### 4.4 Unión de los datos
+Los datos de las estaciones de la AEMET están por provincia. Por lo tanto, se agruparon por comunidad. Después se unieron las tablas de olas de calor, mortalidad y PIB por comunidad autónoma y año.
+
+Como las comunidades más grandes tienen más nacimientos, y por lo tanto más muertes, no se compararon directamente los números de muertes. Se calculó el índice de mortalidad para cada comunidad, donde 100 indica un año normal. En la pregunta 1 el año normal se calculó con la tendencia de cada comunidad, ya que la mortalidad infantil baja con los años.
+
+Para la pregunta 3, las comunidades se clasificaron en PIB alto o PIB bajo según si su PIB medio estaba por encima o por debajo del umbral (la media de todas las comunidades).
 
 ## 5. Resultados / Discusión
 
@@ -46,19 +73,33 @@ También se simplificaron los nombres de las comunidades para que coincidan con 
 
 ```{r, echo=FALSE}
 plotly::ggplotly(p, tooltip = "text")
-p1
 ```
 
+```{r, echo=FALSE}
+p1
+```
 ### 5.2 Pregunta 2:¿Qué dimensión de las olas de calor ejerce un mayor impacto sobre la mortalidad infantil?
-
+```{r, echo=FALSE}
+duracionVSintensidad
+```
 
 ### 5.3 Pregunta 2: ¿Cómo varía la mortalidad infantil durante los años con olas de calor entre las comunidades autónomas con distinto PIB?
+```{r, echo=FALSE}
+knitr::kable(resumen)
+```
 
+```{r, echo=FALSE}
+grafico_resumen_pib
+```
+
+```{r, echo=FALSE}
+grafico_ccaa_pib
+```
 
 ## 6. Conclusión
 En este seminario se ha analizado la relación entre las olas de calor y la mortalidad infantil en España entre 2001 y 2025, combinando datos de temperatura de la Agencia Estatal de Meteorología, datos de defunciones de menores de un año del Instituto Nacional de Estadística y datos de PIB regional del mismo organismo. A partir de ellos se han planteado tres preguntas: cómo varía la mortalidad infantil según el número de olas de calor, qué dimensión de las olas (duración o intensidad) se asocia más con ella y si esta relación difiere entre comunidades autónomas con distinto nivel de PIB.
 
-Respeco a la primera pregunta .... COMPLETAR
+Respecto a la primera pregunta .... COMPLETAR
 
 En la segunda pregunta, la duración media de las olas de calor no muestra una relación clara con el número de muertes infantiles, ya que la recta de tendencia es prácticamente plana y el intervalo de confianza se ensancha hacia valores altos. La intensidad acumulada presenta una pendiente positiva más marcada, por lo que es la dimensión con una tendencia más visible. No obstante, al tratarse de datos anuales y autonómicos, la dispersión es elevada y unos pocos valores extremos influyen en la recta, por lo que esta asociación debe interpretarse como visual y no concluyente. Además, la intensidad acumulada se obtiene sumando los valores de las provincias de cada comunidad, lo que puede favorecer a las comunidades con más provincias, que a su vez tienden a registrar más muertes.
 
