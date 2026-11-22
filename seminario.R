@@ -469,3 +469,4 @@ ggplot(datos_grafica, aes(x = valor_dimension, y = muertes)) +
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
+
