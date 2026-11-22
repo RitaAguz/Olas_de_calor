@@ -162,13 +162,11 @@ datos <- peninsula %>%
   enter_object(Data) %>%
   gather_array() %>%
   spread_all() %>%
-  filter(Anyo >= 2000, Anyo <= 2025) %>% # se filtran los años de 2000 a 2025 (no hay 2026) 
+  filter(Anyo >= 2001, Anyo <= 2025) %>% # se filtran los años de 2000 a 2025 (no hay 2026) 
   select(Nombre, Anyo, Valor, T3_TipoDato) %>%
   as_tibble()
 
 View(datos)
-
-
 
 
 # se separa el nombre de la serie en columnas
@@ -204,7 +202,6 @@ por_causa <- datos %>%
   summarise(Valor = sum(Valor), .groups = "drop") %>%
   rename(grupo = causa) %>%
   mutate(grupo = str_wrap(grupo, width = 25)) # para los nombres demasiado largos
-
 
 
 
@@ -390,8 +387,8 @@ ggplot(olas, aes(x = inicio, xend = fin, y=max_pct, color=-max_pct))+
 
 
 # se dibujan las dos gráficas
-grafica_caja(por_comunidad, "Por comunidad (2000-2025)", "Comunidad autónoma")
-grafica_caja(por_causa, "Por causa (2000-2025)", "Causa de muerte")
+grafica_caja(por_comunidad, "Por comunidad (2001-2025)", "Comunidad autónoma")
+grafica_caja(por_causa, "Por causa (2001-2025)", "Causa de muerte")
 
 
 
@@ -432,4 +429,47 @@ grafica_puntos_pib(pib_tasa, "Variación interanual del PIB por Comunidad Autón
                    "Tasa de variación (%)")
 grafica_caja_pib(pib_tasa, "Distribución de la variación interanual del PIB por CCAA (2001-2025)",
                  "Tasa de variación (%)")
+
+
+#----------------------------------------------------------------------------------
+#PREGUNTAS
+#----------------------------------------------------------------------------------
+
+# 1. ¿CÓMO VARIA LA MORTALIDAD INFANTIL SEGÚN EL NÚMERO DE OLAS DE CALOR EN 
+# CADA COMUNIDAD AUTÓNOMA DE 2001 A 2025?
+
+# se cuentan las olas por comunidad y año
+olas_anuales <- ola_ccaa %>%
+  drop_na(grupo) %>%
+  group_by(grupo, anio) %>%
+  summarise(n_olas = max(frecuencia_anual), .groups = "drop")
+
+# se unen las olas con la mortalidad
+pregunta1 <- mortalidad %>%
+  ungroup() %>%
+  left_join(olas_anuales, by = c("grupo", "anio")) %>%
+  mutate(n_olas = replace_na(n_olas, 0))
+
+# se dibuja la dispersión interactiva
+p <- ggplot(pregunta1, aes(x = n_olas, y = indice, colour = grupo,
+                           text = paste("Año:", anio))) +
+  geom_jitter(width = 0.1, size = 2) +
+  labs(x = "Número de olas de calor en el año",
+       y = "Índice de mortalidad infantil (100 = año normal)",
+       colour = "Comunidad autónoma") +
+  theme_minimal()
+plotly::ggplotly(p)
+
+# se calcula el índice medio según el número de olas
+barras <- pregunta1 %>%
+  group_by(n_olas) %>%
+  summarise(indice_medio = mean(indice), .groups = "drop")
+
+# se dibuja la gráfica de barras
+ggplot(barras, aes(x = factor(n_olas), y = indice_medio)) +
+  geom_col(fill = "darkorange") +
+  geom_hline(yintercept = 100, linetype = "dashed") +
+  labs(x = "Número de olas de calor en el año",
+       y = "Índice de mortalidad infantil medio") +
+  theme_minimal()
 
