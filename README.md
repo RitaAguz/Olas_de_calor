@@ -20,6 +20,19 @@ El objetivo general de este seminario es estudiar si existe alguna relación ent
 
 3. Comparación de la mortalidad infantil durante los años con olas de calor entre comunidades autónomas con distinto PIB.
 
+## Resultados
+
+### ¿Cómo varía la mortalidad infantil según el número de olas de calor en cada comunidad autónoma?
+![Mortalidad según el número de olas](OUTPUT/GRAPHICS/pregunta1_cajas.png)
+![Mortalidad respecto a lo esperado](OUTPUT/GRAPHICS/pregunta1_barras.png)
+
+### ¿Qué dimensión de las olas de calor (intensidad o duración) ejerce un mayor impacto sobre la mortalidad infantil?
+![Mortalidad según la duración e intensidad de las olas](OUTPUT/GRAPHICS/pregunta2.png)
+
+### ¿Cómo varía la mortalidad infantil durante los años con olas de calor entre las comunidades autónomas con distinto PIB?
+![Mortalidad en años con ola por comunidad, de menor a mayor PIB](OUTPUT/GRAPHICS/pregunta3_ccaa.png)
+![Mortalidad según el PIB y la presencia de olas](OUTPUT/GRAPHICS/pregunta3_resumen.png)
+
 ## Conclusiones
 No se observa ninguna relación clara entre las olas de calor y la mortalidad infantil. 
 El número y la duración de las olas no se asocian con más muertes. La intensidad muestra una ligera tendencia, pero no es concluyente, y el PIB no modifica de manera importante
