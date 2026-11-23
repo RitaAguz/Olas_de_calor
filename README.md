@@ -23,7 +23,7 @@ El objetivo general de este seminario es estudiar si existe alguna relación ent
 ## Resultados
 
 ### ¿Cómo varía la mortalidad infantil según el número de olas de calor en cada comunidad autónoma?
-![Mortalidad según el número de olas](OUTPUT/GRAPHICS/pregunta1_cajas.png)
+![Mortalidad según el número de olas](OUTPUT/GRAPHICS/pregunta1_cajasV2.png)
 ![Mortalidad respecto a lo esperado](OUTPUT/GRAPHICS/pregunta1_barras.png)
 
 ### ¿Qué dimensión de las olas de calor (intensidad o duración) ejerce un mayor impacto sobre la mortalidad infantil?

@@ -501,7 +501,7 @@ grafico_ccaa_pib
 save(grafico_resumen_pib, grafico_ccaa_pib, file = "OUTPUT/GRAPHICS/graficas_pregunta3.RData")
 
 # Se guardan todas las gráficas como imagen para el README
-ggsave("OUTPUT/GRAPHICS/pregunta1_cajas.png", plot = p, width = 8, height = 5)
+ggsave("OUTPUT/GRAPHICS/pregunta1_cajasV2.png", plot = p, width = 8, height = 5)
 ggsave("OUTPUT/GRAPHICS/pregunta1_barras.png", plot = p1, width = 8, height = 5)
 ggsave("OUTPUT/GRAPHICS/pregunta2.png", plot = duracionVSintensidad, width = 8, height = 5)
 ggsave("OUTPUT/GRAPHICS/pregunta3_resumen.png", plot = grafico_resumen_pib, width = 8, height = 5)
