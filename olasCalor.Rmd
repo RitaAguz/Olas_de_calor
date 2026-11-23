@@ -169,10 +169,59 @@ Los datos del PIB se sacaron de la *Contabilidad Regional de España* del Instit
 pib_raw <- fromJSON("INPUT/DATA/pib.json")
 ```
 
-
 Se conservaron solo las comunidades y ciudades autónomas,cubriendo los años del 2000 a 2025.
+
+```{r, echo=FALSE}
+pib_ccaa <- pib_tabla %>%
+  filter(nivel == "Comunidades y Ciudades Autónomas") %>%
+  mutate(grupo = str_remove(territorio,
+                            ", Comunidad de|, Región de|, Principado de|, Comunidad Foral de"))
+```
+
 Después se separaron dos series: el PIB en euros y la tasa de variación interanual. 
-También se simplificaron los nombres de las comunidades para que coincidan con los de los datos de mortalidad. 
+
+```{r, echo=FALSE}
+pib_euros <- pib_ccaa %>%
+  filter(tipo == "Dato base") %>%
+  mutate(Valor = Valor / 1e6)          
+
+pib_tasa <- pib_ccaa %>%
+  filter(tipo == "Tasa de Variación Interanual")
+```
+
+Para poder trabajar con los datos de mortalidad, se simplificaron los nombres de las comunidades para que coincidan con los de los datos de mortalidad, pues los primeros estan por provincias y los del producto interior bruto son comunidaddes autónomas. 
+
+```{r, echo=FALSE}
+ola_ccaa <- olas_por_provincia %>%
+  mutate(provincia = toupper(provincia)) %>%
+  mutate(grupo = case_when(
+    provincia %in% c("ALMERIA", "ALMERÍA", "CADIZ", "CÁDIZ", "CORDOBA", "CÓRDOBA", "GRANADA",
+                     "HUELVA", "JAEN", "JAÉN", "MALAGA", "MÁLAGA", "SEVILLA")        ~ "Andalucía",
+    provincia %in% c("HUESCA", "TERUEL", "ZARAGOZA")                                ~ "Aragón",
+    provincia %in% c("ASTURIAS")                                                    ~ "Asturias",
+    provincia %in% c("BALEARES", "ILLES BALEARS", "ISLAS BALEARES")                 ~ "Balears, Illes",
+    provincia %in% c("LAS PALMAS", "PALMAS, LAS", "SANTA CRUZ DE TENERIFE",
+                     "STA. CRUZ DE TENERIFE")                                       ~ "Canarias",
+    provincia %in% c("CANTABRIA")                                                   ~ "Cantabria",
+    provincia %in% c("AVILA", "ÁVILA", "BURGOS", "LEON", "LEÓN", "PALENCIA", "SALAMANCA",
+                     "SEGOVIA", "SORIA", "VALLADOLID", "ZAMORA")                    ~ "Castilla y León",
+    provincia %in% c("ALBACETE", "CIUDAD REAL", "CUENCA", "GUADALAJARA", "TOLEDO")  ~ "Castilla - La Mancha",
+    provincia %in% c("BARCELONA", "GIRONA", "GERONA", "LLEIDA", "LERIDA", "TARRAGONA") ~ "Cataluña",
+    provincia %in% c("ALICANTE", "CASTELLON", "CASTELLÓN", "VALENCIA")              ~ "Comunitat Valenciana",
+    provincia %in% c("BADAJOZ", "CACERES", "CÁCERES")                               ~ "Extremadura",
+    provincia %in% c("CORUÑA, A", "A CORUÑA", "LA CORUÑA", "LUGO", "OURENSE",
+                     "PONTEVEDRA")                                                  ~ "Galicia",
+    provincia %in% c("MADRID")                                                      ~ "Madrid",
+    provincia %in% c("MURCIA")                                                      ~ "Murcia",
+    provincia %in% c("NAVARRA")                                                     ~ "Navarra",
+    provincia %in% c("ALAVA", "ÁLAVA", "ARABA/ALAVA", "GIPUZKOA", "GUIPUZCOA",
+                     "BIZKAIA", "VIZCAYA")                                          ~ "País Vasco",
+    provincia %in% c("RIOJA, LA", "LA RIOJA")                                       ~ "Rioja, La",
+    provincia %in% c("CEUTA")                                                       ~ "Ceuta",
+    provincia %in% c("MELILLA")                                                     ~ "Melilla",
+    .default = NA
+  ))
+```
 
 ### 4.4 Unión de los datos
 Los datos de las estaciones de la AEMET están por provincia. Por lo tanto, se agruparon por comunidad. Después se unieron las tablas de olas de calor, mortalidad y PIB por comunidad autónoma y año.

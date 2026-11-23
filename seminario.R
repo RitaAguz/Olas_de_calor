@@ -346,12 +346,7 @@ p <- ggplot(pregunta1, aes(x = factor(n_olas), y = indice_aj)) +
 plotly::ggplotly(p, tooltip = "text")
 
 # se calcula el índice medio según el número de olas
-barras <- pregunta1 %>%
-  group_by(n_olas) %>%
-  summarise(indice_medio = mean(indice_aj), .groups = "drop") %>%
-  mutate(supera = indice_medio > 100)
-
-# se dibuja la gráfica de barras
+S# se dibuja la gráfica de barras
 p1 <- ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
   geom_col(show.legend = FALSE) +
   scale_fill_manual(values = c("TRUE" = "palevioletred", "FALSE" = "lightpink")) +
