@@ -57,6 +57,13 @@ load("./INPUT/DATA/datosolascalor.RData")
 ```
 
 Tras una limpieza de datos general limpiando los datos de precipitaciones y asegurando el tipo DATE, se calcula el percentil 95 según la guía de la AEMET para poder identificar las olas de calor posteriormente.
+```{r, echo=TRUE}
+datos_trabajo2 <- datos_trabajar %>%
+  mutate(
+    fecha = as.Date(fecha),
+    prec = as.numeric(stringr::str_replace(prec, ",", "."))
+  )
+```
 
 ```{r, echo=FALSE}
 p95 <- datos_referencia %>%
@@ -67,8 +74,22 @@ p95 <- datos_referencia %>%
 ```
 
 Identificamos las rachas de calor iguales o mayores a tres días
+```{r, echo=TRUE}
+#tabla diaria del % de estaciones que superan el umbral de calor
+diario <- datos_trabajo2 %>%
+  inner_join(p95, by = "indicativo") %>%
+  filter(!is.na(tmax), !is.na(p95)) %>%
+  group_by(fecha) %>%
+  summarise(
+    n_est = n(),
+    pct_sup = mean(tmax > p95) * 100,
+    .groups = "drop"
+  ) %>%
+  arrange(fecha) %>%
+  mutate(dia_calido = pct_sup >= 10)
+```
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 olas <- diario %>%
   mutate(
     nueva = is.na(lag(dia_calido)) |
@@ -90,8 +111,17 @@ olas <- diario %>%
 ```
 
 Finalmente tras expandir cada ola de calor oficial mediante id_ola para que no coincida con la racha de AEMET (viento), cruzamos los datos de las estaciones diarios para calcular las métricas por provicia y año.
+```{r, echo=TRUE}
+#expando cada ola oficial a sus días concretos usando id_ola para que no coincida con racha de aemet (viento)
+dias_ola_oficial <- do.call(rbind, lapply(seq_len(nrow(olas)), function(i) {
+  data.frame(
+    fecha = seq(as.Date(olas$inicio[i]), as.Date(olas$fin[i]), by = "day"),
+    id_ola = olas$racha[i]
+  )
+}))
+```
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 olas_por_provincia <- datos_trabajo2 %>%
   mutate(fecha = as.Date(fecha)) %>%
   inner_join(dias_ola_oficial, by = "fecha") %>%
@@ -121,12 +151,13 @@ olas_por_provincia <- datos_trabajo2 %>%
 ### 4.2 Datos de mortalidad infantil
 Los datos de mortalidad se sacaron de la *Estadística de defunciones según la causa de muerte* del Instituto Nacional de Estadística [@INEdefunciones], descargados en formato `.json`.
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
 ```
 
 Se seleccionan las muertes por todaas las causas y ambos sexos en cada comunidad autónoma, sin incluir el total nacional ni el extranjero. Los datos se filtran de 2001 a 2025 para poder compararlos con los datos de olas de calor.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
+library(tidyjson)
 datos <- peninsula %>% 
   gather_array("serie") %>%
   spread_all() %>%
@@ -139,9 +170,17 @@ datos <- peninsula %>%
   select(Nombre, Anyo, Valor, T3_TipoDato) %>%
   as_tibble()
 ```
+```{r, echo=TRUE}
+# se separa el nombre de la serie en columnas
+datos <- datos %>%
+  separate_wider_delim(Nombre, delim = ". ",
+                       names = c("causa", "sexo", "edad", "comunidad", "tipo"),
+                       too_many = "drop")
+```
+
 
 Se suman las muertes de todas las comunidades para cada causa y año, y se parten los nombres más largos para que se lean mejor en la gráfica.
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 # se toman todas las causas y ambos sexos, por comunidad
 por_comunidad <- datos %>%
   filter(str_detect(causa, "Todas las causas"), sexo == "Total",
@@ -149,8 +188,8 @@ por_comunidad <- datos %>%
   rename(grupo = comunidad)
 ```
 
-Se separa el nombre de cada serue en columnas(causa, sexo,edad, comunidad y tipo).
-```{r, echo=FALSE}
+Se separa el nombre de cada serie en columnas(causa, sexo,edad, comunidad y tipo).
+```{r, echo=TRUE}
 
 # se toma el total nacional y ambos sexos, por causa
 por_causa <- datos %>%
@@ -165,13 +204,26 @@ por_causa <- datos %>%
 ### 4.3 Datos del PIB
 Los datos del PIB se sacaron de la *Contabilidad Regional de España* del Instituto Nacional de Estadística [@INEpib], concretamente de la tabla del PIB a precios de mercado, a precios corrientes, por comunidades y ciudades autónomas y provincias, descargada en formato `.json`. 
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
+library(jsonlite)
 pib_raw <- fromJSON("INPUT/DATA/pib.json")
+```
+```{r, echo=TRUE}
+pib_tabla <- pib_raw %>%
+  as_tibble() %>%
+  mutate(
+    nivel      = map_chr(MetaData, ~ .x$T3_Variable[1]),  # CCAA / Provincias / NUTS1 / Total
+    territorio = map_chr(MetaData, ~ .x$Nombre[1]),       # nombre original del INE
+    tipo       = map_chr(MetaData, ~ .x$Nombre[2])        # Dato base / Tasa de Variación Interanual / Estructura Porcentual
+  ) %>%
+  select(COD, nivel, territorio, tipo, T3_Unidad, T3_Escala, Data) %>%
+  unnest(Data) %>%
+  mutate(Valor = as.numeric(Valor))
 ```
 
 Se conservaron solo las comunidades y ciudades autónomas,cubriendo los años del 2000 a 2025.
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 pib_ccaa <- pib_tabla %>%
   filter(nivel == "Comunidades y Ciudades Autónomas") %>%
   mutate(grupo = str_remove(territorio,
@@ -180,7 +232,7 @@ pib_ccaa <- pib_tabla %>%
 
 Después se separaron dos series: el PIB en euros y la tasa de variación interanual. 
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 pib_euros <- pib_ccaa %>%
   filter(tipo == "Dato base") %>%
   mutate(Valor = Valor / 1e6)          
@@ -191,7 +243,7 @@ pib_tasa <- pib_ccaa %>%
 
 Para poder trabajar con los datos de mortalidad, se simplificaron los nombres de las comunidades para que coincidan con los de los datos de mortalidad, pues los primeros estan por provincias y los del producto interior bruto son comunidaddes autónomas. 
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 ola_ccaa <- olas_por_provincia %>%
   mutate(provincia = toupper(provincia)) %>%
   mutate(grupo = case_when(

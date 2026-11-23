@@ -142,7 +142,7 @@ datos <- peninsula %>%
   enter_object(Data) %>%
   gather_array() %>%
   spread_all() %>%
-  filter(Anyo >= 2001, Anyo <= 2025) %>% # se filtran los años de 2000 a 2025 (no hay 2026) 
+  filter(Anyo >= 2001, Anyo <= 2025) %>% # se filtran los años de 2001 a 2025  
   select(Nombre, Anyo, Valor, T3_TipoDato) %>%
   as_tibble()
 
@@ -346,7 +346,12 @@ p <- ggplot(pregunta1, aes(x = factor(n_olas), y = indice_aj)) +
 plotly::ggplotly(p, tooltip = "text")
 
 # se calcula el índice medio según el número de olas
-S# se dibuja la gráfica de barras
+barras <- pregunta1 %>%
+  group_by(n_olas) %>%
+  summarise(indice_medio = mean(indice_aj), .groups = "drop") %>%
+  mutate(supera = indice_medio > 100)
+
+# se dibuja la gráfica de barras
 p1 <- ggplot(barras, aes(x = factor(n_olas), y = indice_medio, fill = supera)) +
   geom_col(show.legend = FALSE) +
   scale_fill_manual(values = c("TRUE" = "palevioletred", "FALSE" = "lightpink")) +
