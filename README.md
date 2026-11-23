@@ -4,32 +4,35 @@ Autores: _Santiago Herrero, Paula Manrique y Margarita Aguzarova_
 Asignatura: _Fuentes de datos Biomédicos y Web Semántica_  
 Grado: _Ingeniería de la Salud en la Universidad de Burgos_  
 
-El cambio climático representa uno de los mayores desafíos sanitarios del siglo XXI. Entre sus manifestaciones más evidentes se encuentra el incremento en la frecuencia, intensidad y duración de las olas de calor. Estos episodios de temperaturas extremas tienen un impacto directo y contrastado sobre la salud pública, lo que podría afectar a las poblaciones mas vulnerables.
-
-Dentro de los grupos de riesgo, la población infantil, y en especial los lactantes y menores de un año, presenta una alta vulnerabilidad fisiológica frente al estrés térmico. Su termorregulación es inmadura, su gran superficie corporal en relación con su masa y la dependencia para su cuidado provocan una exposición a la deshidratación y fallos sistémicos desencadenados por las altas temperaturas.
-
-No obstante, el impacto de las olas de calor no es igual para todas las poblaciones ni para todas las comunidades autónomas, el efecto de las olas de calor es influido por los factores socioeconómicos y ambientales. En España existen variedades climáticas significativas entre comunidades autónomas que se enlazan a desigualdades socioeconómicas.
-
-El producto interior bruto per cápita y el nivel de desarrollo económico por comunidad autónoma actúan como variables medidoras. Las regiones con un mayor PIB suelen tener acceso a mejores infraestructuras sanitarias, viviendas mejor acondicionadas y una mayor capacidad de respuesta frente a emergencias climáticas, lo que podría mitigar parte del impacto de las altas temperaturas en la salud infantil. 
-
-El informe tendrá como objetivo analizar si existe algún tipo de relación entre la intensidad y frecuencias de olas de calor, la mortalidad infantil y el PIB por comunidad autónoma en España. Con este informe buscaremos identificar patrones y cuantificar el impacto del PIB como factor protector.
-
-Para conseguir las olas de calor se han filtrado los datos de las estaciones según la definición de la AEMET:
-En España, la AEMET considera que hay una ola de calor cuando se registran temperaturas máximas diarias superiores al percentil 95 de su serie histórica de referencia (meses de julio y agosto) en al menos eñ 10% de las estaciones metereológicas, durante un periodo mínimo de tres días consecutivos, AEMET considera que la referencia de datos son los registrados entre los años 1971 y 2000
+El cambio climático ha aumentado la frecuencia e intensidad de las olas de calor,
+que afectan especialmente a los menores de un año por su termorregulación inmadura. 
+Las comunidades con mayor PIB podrían estar mejor preparadas para reducir el impacto. 
+En este seminario se analiza si existe relación entre las olas de calor, la mortalidad infantil 
+y el PIB por comunidad autónoma en España entre 2001 y 2025.
 
 ## Objetivo general
 El objetivo general de este seminario es estudiar si existe alguna relación entre las olas de calor y la mortalidad infantil en las comunidades autónomas de España durante el periodo 2000-2025, teniendo en cuenta el producto interior bruto (PIB) como posible factor que pueda afectar esa relación.
 
 ## Objetivos específicos 
-1. Estudio de la relación entre el número de olas de calor y la mortalidad infantil por comunidades autónomas en el periodo 2000-2025.
+1. Estudio de la relación entre el número de olas de calor y la mortalidad infantil por comunidades autónomas en el periodo 2001-2025.
 
 2. Cuál de las dos dimensiones de olas de calor (frecuencia e intensidad) ejerce un mayor impacto sobre la mortalidad infantil. 
 
 3. Comparación de la mortalidad infantil durante los años con olas de calor entre comunidades autónomas con distinto PIB.
 
-
-## Instrucciones de ejecución
-
+## Conclusiones
+No se observa ninguna relación clara entre las olas de calor y la mortalidad infantil. 
+El número y la duración de las olas no se asocian con más muertes. La intensidad muestra una ligera tendencia, pero no es concluyente, y el PIB no modifica de manera importante
+esta relación. La principal limitación es que los datos de mortalidad son anuales, mientras los datos de olas de calor son diarios, lo que impide aislar
+las muertes ocurridas durante cada ola de calor.
 
 ## Estructura del proyecto
-'INPUT/DATA': contiene dos archivos JSON y un archivo RData
+- 'INPUT/DATA': Contiene dos archivos JSON y un archivo RData  
+- 'olasCalor.Rmd': el informe del seminario, que genera el HTML con los resultados.
+- 'OUTPUT/DATA': Contiene dos tablas (una de mortalidad y otra de PIB) 
+- 'OUTPUT/GRAPHICS': Contiene las gráficas de representación de datos y las gráficas de las preguntas para no tener la necesidad de volver a ejecutar el código.
+- 'README.md': la pequeña desripción del proyecto
+- 'Referencias.bib': fuentes bibliográficas de los datos usados.
+- 'seminario.R': el código.
+- 'seminarioPrueba.Rproj': el proyecto de RStudio.
+
