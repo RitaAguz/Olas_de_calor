@@ -125,7 +125,42 @@ Los datos de mortalidad se sacaron de la *Estadística de defunciones según la 
 peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
 ```
 
-Se filtraron las defunciones de menores de 1 año, los años 2001-2025 y se quitaron "Extranjero" y "Total Nacional" para trabajar sólo con las comunidades autónomas.
+Se seleccionan las muertes por todaas las causas y ambos sexos en cada comunidad autónoma, sin incluir el total nacional ni el extranjero. Los datos se filtran de 2001 a 2025 para poder compararlos con los datos de olas de calor.
+```{r, echo=FALSE}
+datos <- peninsula %>% 
+  gather_array("serie") %>%
+  spread_all() %>%
+  select(document.id, Nombre) %>%
+  filter(str_detect(Nombre, "Menos de 1 año|Menores de 1 año")) %>% # se filtran las edades para que sólo sean bebés menores de 1 año
+  enter_object(Data) %>%
+  gather_array() %>%
+  spread_all() %>%
+  filter(Anyo >= 2001, Anyo <= 2025) %>% # se filtran los años de 2001 a 2025  
+  select(Nombre, Anyo, Valor, T3_TipoDato) %>%
+  as_tibble()
+```
+
+Se suman las muertes de todas las comunidades para cada causa y año, y se parten los nombres más largos para que se lean mejor en la gráfica.
+```{r, echo=FALSE}
+# se toman todas las causas y ambos sexos, por comunidad
+por_comunidad <- datos %>%
+  filter(str_detect(causa, "Todas las causas"), sexo == "Total",
+         comunidad != "Total Nacional", comunidad != "Extranjero") %>%
+  rename(grupo = comunidad)
+```
+
+Se separa el nombre de cada serue en columnas(causa, sexo,edad, comunidad y tipo).
+```{r, echo=FALSE}
+
+# se toma el total nacional y ambos sexos, por causa
+por_causa <- datos %>%
+  filter(!str_detect(causa, "Todas las causas"), sexo == "Total",
+         comunidad != "Total Nacional", comunidad != "Extranjero") %>%
+  group_by(causa, Anyo) %>%
+  summarise(Valor = sum(Valor), .groups = "drop") %>%
+  rename(grupo = causa) %>%
+  mutate(grupo = str_wrap(grupo, width = 25)) # para los nombres demasiado largos
+```
 
 ### 4.3 Datos del PIB
 Los datos del PIB se sacaron de la *Contabilidad Regional de España* del Instituto Nacional de Estadística [@INEpib], concretamente de la tabla del PIB a precios de mercado, a precios corrientes, por comunidades y ciudades autónomas y provincias, descargada en formato `.json`. 
