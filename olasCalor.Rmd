@@ -50,15 +50,90 @@ El objetivo general de este seminario es estudiar si existe alguna relación ent
 ## 4. Metodología
 
 ### 4.1 Datos de las olas de calor
-Los registros de olas de calor se identificaron filtrando los datos de las estaciones meteorológicas de la AEMET [@AEMETdatos], descargados a través de su API oficial, y aplicando los criterios metodológicos establecidos por dicho organismo.
+Los registros de olas de calor se identificaron filtrando los datos de las estaciones meteorológicas de la AEMET [@AEMETdatos], descargados a través de su API oficial y guardándolos en un environment,  y aplicando los criterios metodológicos establecidos por dicho organismo.
+
+```{r, echo=FALSE}
+load("./INPUT/DATA/datosolascalor.RData")
+```
+
+Tras una limpieza de datos general limpiando los datos de precipitaciones y asegurando el tipo DATE, se calcula el percentil 95 según la guía de la AEMET para poder identificar las olas de calor posteriormente.
+
+```{r, echo=FALSE}
+p95 <- datos_referencia %>%
+  filter(!is.na(tmax)) %>%
+  group_by(indicativo) %>%
+  summarise(p95 = quantile(tmax, 0.95), n_obs = n(), .groups = "drop") %>%
+  filter(n_obs >= 600)
+```
+
+Identificamos las rachas de calor iguales o mayores a tres días
+
+```{r, echo=FALSE}
+olas <- diario %>%
+  mutate(
+    nueva = is.na(lag(dia_calido)) |
+      dia_calido != lag(dia_calido) |
+      as.numeric(fecha - lag(fecha)) != 1,
+    racha_id = cumsum(nueva)
+  ) %>%
+  filter(dia_calido) %>%
+  group_by(racha_id) %>%
+  summarise(
+    inicio = as.Date(min(fecha)),
+    fin = as.Date(max(fecha)),
+    dias = n(),
+    max_pct = max(pct_sup),
+    .groups = "drop"
+  ) %>%
+  filter(dias >= 3) %>%
+  mutate(racha = row_number())
+```
+
+Finalmente tras expandir cada ola de calor oficial mediante id_ola para que no coincida con la racha de AEMET (viento), cruzamos los datos de las estaciones diarios para calcular las métricas por provicia y año.
+
+```{r, echo=FALSE}
+olas_por_provincia <- datos_trabajo2 %>%
+  mutate(fecha = as.Date(fecha)) %>%
+  inner_join(dias_ola_oficial, by = "fecha") %>%
+  inner_join(p95, by = "indicativo") %>%
+  filter(tmax > p95) %>%
+  mutate(
+    anio = lubridate::year(fecha),
+    exceso_termico = tmax - p95
+  ) %>%
+  ungroup() %>%
+  group_by(provincia, anio, id_ola) %>%
+  summarise(
+    dias_ola = dplyr::n_distinct(fecha),
+    intensidad_media = mean(exceso_termico, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(provincia, anio) %>%
+  summarise(
+    frecuencia_anual = dplyr::n_distinct(id_ola),
+    duracion_media_ola = mean(dias_ola, na.rm = TRUE),
+    intensidad_acumulada = sum(intensidad_media, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+```
 
 ### 4.2 Datos de mortalidad infantil
 Los datos de mortalidad se sacaron de la *Estadística de defunciones según la causa de muerte* del Instituto Nacional de Estadística [@INEdefunciones], descargados en formato `.json`.
+
+```{r, echo=FALSE}
+peninsula <- tidyjson::read_json("INPUT/DATA/peninsula.json")
+```
 
 Se filtraron las defunciones de menores de 1 año, los años 2001-2025 y se quitaron "Extranjero" y "Total Nacional" para trabajar sólo con las comunidades autónomas.
 
 ### 4.3 Datos del PIB
 Los datos del PIB se sacaron de la *Contabilidad Regional de España* del Instituto Nacional de Estadística [@INEpib], concretamente de la tabla del PIB a precios de mercado, a precios corrientes, por comunidades y ciudades autónomas y provincias, descargada en formato `.json`. 
+
+```{r, echo=FALSE}
+pib_raw <- fromJSON("INPUT/DATA/pib.json")
+```
+
 
 Se conservaron solo las comunidades y ciudades autónomas,cubriendo los años del 2000 a 2025.
 Después se separaron dos series: el PIB en euros y la tasa de variación interanual. 
