@@ -335,14 +335,13 @@ pregunta1 <- pregunta1 %>%
   ungroup()
 
 # se dibuja la dispersión interactiva
-p <- ggplot(pregunta1, aes(x = factor(n_olas), y = indice_aj,
-                           text = paste(grupo, "-", anio))) +
+p <- ggplot(pregunta1, aes(x = factor(n_olas), y = indice_aj)) +
   geom_boxplot(alpha = 0.3, outlier.shape = NA, fill = "palevioletred") +
-  geom_jitter(width = 0.1, size = 2, colour = "palevioletred") +
+  geom_jitter(aes(text = paste(grupo, "-", anio)), 
+                  width = 0.1, size = 2, colour = "palevioletred") +
   geom_hline(yintercept = 100, linetype = "dashed") +
   labs(x = "Número de olas de calor en el año",
-       y = "Mortalidad infantil respecto a lo esperado (100 = lo esperado)",
-       colour = "Comunidad autónoma") +
+       y = "Mortalidad infantil respecto a lo esperado (100 = lo esperado)") +
   theme_minimal()
 plotly::ggplotly(p, tooltip = "text")
 
@@ -500,3 +499,11 @@ grafico_ccaa_pib
 
 # Guardo las gráficas correspondientes a la pregunta 3
 save(grafico_resumen_pib, grafico_ccaa_pib, file = "OUTPUT/GRAPHICS/graficas_pregunta3.RData")
+
+# Se guardan todas las gráficas como imagen para el README
+ggsave("OUTPUT/GRAPHICS/pregunta1_cajas.png", plot = p, width = 8, height = 5)
+ggsave("OUTPUT/GRAPHICS/pregunta1_barras.png", plot = p1, width = 8, height = 5)
+ggsave("OUTPUT/GRAPHICS/pregunta2.png", plot = duracionVSintensidad, width = 8, height = 5)
+ggsave("OUTPUT/GRAPHICS/pregunta3_resumen.png", plot = grafico_resumen_pib, width = 8, height = 5)
+ggsave("OUTPUT/GRAPHICS/pregunta3_ccaa.png", plot = grafico_ccaa_pib, width = 8, height = 5)
+
