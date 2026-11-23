@@ -41,6 +41,7 @@ las muertes ocurridas durante cada ola de calor.
 
 ## Estructura del proyecto
 - 'INPUT/DATA': Contiene dos archivos JSON y un archivo RData  
+- 'olasCalor.html': el informe del seminario en formato HTML.
 - 'olasCalor.Rmd': el informe del seminario, que genera el HTML con los resultados.
 - 'OUTPUT/DATA': Contiene dos tablas (una de mortalidad y otra de PIB) 
 - 'OUTPUT/GRAPHICS': Contiene las gráficas de representación de datos y las gráficas de las preguntas para no tener la necesidad de volver a ejecutar el código.
